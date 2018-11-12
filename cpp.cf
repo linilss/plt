@@ -1,36 +1,37 @@
-comment "//" ;
-comment "/*" "*/" ;
-comment "#" ;
-
-
 PDefs. Program    ::= [Def] ;
 
 terminator Def "" ;
 
-DFun.      Def    ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
+comment "//" ;
+comment "/*" "*/" ;
+comment "#" ;
+DUsing. Def ::= "using" QId ";";
+DFun.      Def  ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
 separator  Arg "," ;
 terminator Stm "" ;
 
-ADecl.     Arg    ::= Type Id ;
+ADecl.   Arg    ::= Type Id ;
 
-SExp.      Stm    ::= Exp ";" ;
+SExp.    Stm    ::= Exp ";" ;
 
 SDecl.   Stm    ::= Type Id ";" ;
-
+SDecls.  Stm    ::= Type Id "," [Id] ";" ;
 SInit.   Stm    ::= Type Id "=" Exp ";" ;
 
 SReturn. Stm    ::= "return" Exp ";" ;
 SWhile.  Stm    ::= "while" "(" Exp ")" Stm ;
 SBlock.  Stm    ::= "{" [Stm] "}" ;
+SIf.     Stm    ::= "if" "(" Exp ")" Stm ;
 SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
+SUsing.  Stm    ::= "using" Exp ;
+
 
 EInt.    Exp15  ::= Integer ;
-EString.  Exp15  ::= String ;
+EString. Exp15  ::= String ;
 EDouble. Exp15  ::= Double ;
 ETrue.   Exp15  ::= "true" ;
 EFalse.  Exp15  ::= "false" ;
-
-EQId.    Exp15  ::= [QId] ;
+EQId.    Exp15  ::= QId ;
 
 ECall.   Exp14  ::= Id "(" [Exp] ")" ;
 EPIncr.  Exp14  ::= Exp15 "++" ;
@@ -42,10 +43,13 @@ ENeg.    Exp13  ::= "-"  Exp14 ;
 
 EMul.    Exp12  ::= Exp12 "*"  Exp13 ;
 EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
+
 EAdd.    Exp11  ::= Exp11 "+"  Exp12 ;
 ESub.    Exp11  ::= Exp11 "-"  Exp12 ;
+
 ERS.     Exp10  ::= Exp10 ">>" Exp11 ;
 ELS.     Exp10  ::= Exp10 "<<" Exp11 ;
+
 ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
 EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
 ELEq.    Exp9   ::= Exp9  "<=" Exp10 ;
@@ -53,7 +57,9 @@ EGEq.    Exp9   ::= Exp9  ">=" Exp10 ;
 
 EEq.     Exp8   ::= Exp8  "==" Exp9 ;
 ENEq.    Exp8   ::= Exp8  "!=" Exp9 ;
+
 EAnd.    Exp4   ::= Exp4  "&&" Exp5 ;
+
 EOr.     Exp3   ::= Exp3  "||" Exp4 ;
 EAss.    Exp2   ::= Exp3 "=" Exp2 ;
 
@@ -63,11 +69,15 @@ separator nonempty Id "," ;
 separator nonempty QId "::" ;
 
 QIdent. QId ::= Id ;
+QIdElemId. QIdElem  ::= Id;
+QIdElems. QId ::= [QIdElem] ;
+separator nonempty QIdElem "::" ;
 
 Tbool.   Type ::= "bool" ;
 Tdouble. Type ::= "double" ;
 Tint.    Type ::= "int" ;
 Tvoid.   Type ::= "void" ;
-Tqualified. Type  ::= [QId] ;
+TQConst. Type ::= QId;
+
 
 position token Id (letter (letter | digit | '_')*) ;

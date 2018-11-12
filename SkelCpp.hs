@@ -17,6 +17,7 @@ transProgram x = case x of
   PDefs defs -> failure x
 transDef :: Def -> Result
 transDef x = case x of
+  DUsing qid -> failure x
   DFun type_ id args stms -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
@@ -25,11 +26,14 @@ transStm :: Stm -> Result
 transStm x = case x of
   SExp exp -> failure x
   SDecl type_ id -> failure x
+  SDecls type_ id ids -> failure x
   SInit type_ id exp -> failure x
   SReturn exp -> failure x
   SWhile exp stm -> failure x
   SBlock stms -> failure x
+  SIf exp stm -> failure x
   SIfElse exp stm1 stm2 -> failure x
+  SUsing exp -> failure x
 transExp :: Exp -> Result
 transExp x = case x of
   EInt integer -> failure x
@@ -37,7 +41,7 @@ transExp x = case x of
   EDouble double -> failure x
   ETrue -> failure x
   EFalse -> failure x
-  EQId qids -> failure x
+  EQId qid -> failure x
   ECall id exps -> failure x
   EPIncr exp -> failure x
   EPDecr exp -> failure x
@@ -62,11 +66,18 @@ transExp x = case x of
 transQId :: QId -> Result
 transQId x = case x of
   QIdent id -> failure x
+  QIdElems qidelems -> failure x
 transType :: Type -> Result
 transType x = case x of
+  TQConst qid -> failure x
   Tbool -> failure x
   Tdouble -> failure x
   Tint -> failure x
   Tvoid -> failure x
-  Tqualified qids -> failure x
+transTypes :: Types -> Result
+transTypes x = case x of
+  TypeListElem type_ -> failure x
+transQIdElem :: QIdElem -> Result
+transQIdElem x = case x of
+  QIdElemId id -> failure x
 

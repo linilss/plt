@@ -38,11 +38,11 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in cpp are the following:
   | ``bool`` | ``double`` | ``else`` | ``false``
   | ``if`` | ``int`` | ``return`` | ``true``
-  | ``void`` | ``while`` |  | 
+  | ``using`` | ``void`` | ``while`` | 
 
 The symbols used in cpp are the following:
-  | ( | ) | { | }
-  | , | ; | = | ++
+  | ; | ( | ) | {
+  | } | , | = | ++
   | -- | - | * | /
   | + | >> | << | <
   | > | <= | >= | ==
@@ -60,7 +60,8 @@ All other symbols are terminals.
   | //Program// | -> | //[Def]// 
   | //[Def]// | -> | **eps**
   |  |  **|**  | //Def// //[Def]// 
-  | //Def// | -> | //Type// //Id// ``(`` //[Arg]// ``)`` ``{`` //[Stm]// ``}`` 
+  | //Def// | -> | ``using`` //QId// ``;`` 
+  |  |  **|**  | //Type// //Id// ``(`` //[Arg]// ``)`` ``{`` //[Stm]// ``}`` 
   | //[Arg]// | -> | **eps**
   |  |  **|**  | //Arg// 
   |  |  **|**  | //Arg// ``,`` //[Arg]// 
@@ -69,17 +70,20 @@ All other symbols are terminals.
   | //Arg// | -> | //Type// //Id// 
   | //Stm// | -> | //Exp// ``;`` 
   |  |  **|**  | //Type// //Id// ``;`` 
+  |  |  **|**  | //Type// //Id// ``,`` //[Id]// ``;`` 
   |  |  **|**  | //Type// //Id// ``=`` //Exp// ``;`` 
   |  |  **|**  | ``return`` //Exp// ``;`` 
   |  |  **|**  | ``while`` ``(`` //Exp// ``)`` //Stm// 
   |  |  **|**  | ``{`` //[Stm]// ``}`` 
+  |  |  **|**  | ``if`` ``(`` //Exp// ``)`` //Stm// 
   |  |  **|**  | ``if`` ``(`` //Exp// ``)`` //Stm// ``else`` //Stm// 
+  |  |  **|**  | ``using`` //Exp// 
   | //Exp15// | -> | //Integer// 
   |  |  **|**  | //String// 
   |  |  **|**  | //Double// 
   |  |  **|**  | ``true`` 
   |  |  **|**  | ``false`` 
-  |  |  **|**  | //[QId]// 
+  |  |  **|**  | //QId// 
   |  |  **|**  | ``(`` //Exp// ``)`` 
   | //Exp14// | -> | //Id// ``(`` //[Exp]// ``)`` 
   |  |  **|**  | //Exp15// ``++`` 
@@ -125,10 +129,15 @@ All other symbols are terminals.
   | //[QId]// | -> | //QId// 
   |  |  **|**  | //QId// ``::`` //[QId]// 
   | //QId// | -> | //Id// 
-  | //Type// | -> | ``bool`` 
+  |  |  **|**  | //[QIdElem]// 
+  | //Type// | -> | //QId// 
+  |  |  **|**  | ``bool`` 
   |  |  **|**  | ``double`` 
   |  |  **|**  | ``int`` 
   |  |  **|**  | ``void`` 
-  |  |  **|**  | //[QId]// 
+  | //Types// | -> | //Type// 
+  | //QIdElem// | -> | //Id// 
+  | //[QIdElem]// | -> | //QIdElem// 
+  |  |  **|**  | //QIdElem// ``::`` //[QIdElem]// 
 
 

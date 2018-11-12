@@ -11,7 +11,7 @@ newtype Id = Id ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
 
-data Def = DFun Type Id [Arg] [Stm]
+data Def = DUsing QId | DFun Type Id [Arg] [Stm]
   deriving (Eq, Ord, Show, Read)
 
 data Arg = ADecl Type Id
@@ -20,11 +20,14 @@ data Arg = ADecl Type Id
 data Stm
     = SExp Exp
     | SDecl Type Id
+    | SDecls Type Id [Id]
     | SInit Type Id Exp
     | SReturn Exp
     | SWhile Exp Stm
     | SBlock [Stm]
+    | SIf Exp Stm
     | SIfElse Exp Stm Stm
+    | SUsing Exp
   deriving (Eq, Ord, Show, Read)
 
 data Exp
@@ -33,7 +36,7 @@ data Exp
     | EDouble Double
     | ETrue
     | EFalse
-    | EQId [QId]
+    | EQId QId
     | ECall Id [Exp]
     | EPIncr Exp
     | EPDecr Exp
@@ -57,9 +60,15 @@ data Exp
     | EAss Exp Exp
   deriving (Eq, Ord, Show, Read)
 
-data QId = QIdent Id
+data QId = QIdent Id | QIdElems [QIdElem]
   deriving (Eq, Ord, Show, Read)
 
-data Type = Tbool | Tdouble | Tint | Tvoid | Tqualified [QId]
+data Type = TQConst QId | Tbool | Tdouble | Tint | Tvoid
+  deriving (Eq, Ord, Show, Read)
+
+data Types = TypeListElem Type
+  deriving (Eq, Ord, Show, Read)
+
+data QIdElem = QIdElemId Id
   deriving (Eq, Ord, Show, Read)
 
