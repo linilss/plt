@@ -11,7 +11,7 @@ newtype Id = Id ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
 
-data Def = DFun Type [Arg] [Stm]
+data Def = DFun Type Id [Arg] [Stm]
   deriving (Eq, Ord, Show, Read)
 
 data Arg = ADecl Type Id
@@ -29,10 +29,11 @@ data Stm
 
 data Exp
     = EInt Integer
+    | EString String
     | EDouble Double
     | ETrue
     | EFalse
-    | EId Id
+    | EQId [QId]
     | ECall Id [Exp]
     | EPIncr Exp
     | EPDecr Exp
@@ -43,6 +44,8 @@ data Exp
     | EDiv Exp Exp
     | EAdd Exp Exp
     | ESub Exp Exp
+    | ERS Exp Exp
+    | ELS Exp Exp
     | ELt Exp Exp
     | EGt Exp Exp
     | ELEq Exp Exp
@@ -54,6 +57,9 @@ data Exp
     | EAss Exp Exp
   deriving (Eq, Ord, Show, Read)
 
-data Type = Tbool | Tdouble | Tint | Tvoid
+data QId = QIdent Id
+  deriving (Eq, Ord, Show, Read)
+
+data Type = Tbool | Tdouble | Tint | Tvoid | Tqualified [QId]
   deriving (Eq, Ord, Show, Read)
 

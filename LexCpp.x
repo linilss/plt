@@ -21,10 +21,11 @@ $i = [$l $d _ ']          -- identifier character
 $u = [\0-\255]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \( | \) | \{ | \} | \, | \; | \= | \+ \+ | \- \- | \- | \* | \/ | \+ | \< | \> | \< \= | \> \= | \= \= | \! \= | \& \& | \| \|
+   \( | \) | \{ | \} | \, | \; | \= | \+ \+ | \- \- | \- | \* | \/ | \+ | \> \> | \< \< | \< | \> | \< \= | \> \= | \= \= | \! \= | \& \& | \| \| | \: \:
 
 :-
 "//" [.]* ; -- Toss single line comments
+"#" [.]* ; -- Toss single line comments
 "/*" ([$u # \*] | \*+ [$u # [\* \/]])* ("*")+ "/" ;
 
 $white+ ;
@@ -32,7 +33,7 @@ $white+ ;
 $l ($l | $d | \_)* { tok (\p s -> PT p (eitherResIdent (T_Id . share) s)) }
 
 $l $i*   { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
-
+\" ([$u # [\" \\ \n]] | (\\ (\" | \\ | \' | n | t)))* \"{ tok (\p s -> PT p (TL $ share $ unescapeInitTail s)) }
 
 $d+      { tok (\p s -> PT p (TI $ share s))    }
 $d+ \. $d+ (e (\-)? $d+)? { tok (\p s -> PT p (TD $ share s)) }
@@ -101,7 +102,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "==" 16 (b "," 8 (b ")" 4 (b "&&" 2 (b "!=" 1 N N) (b "(" 3 N N)) (b "+" 6 (b "*" 5 N N) (b "++" 7 N N))) (b ";" 12 (b "--" 10 (b "-" 9 N N) (b "/" 11 N N)) (b "<=" 14 (b "<" 13 N N) (b "=" 15 N N)))) (b "int" 24 (b "double" 20 (b ">=" 18 (b ">" 17 N N) (b "bool" 19 N N)) (b "false" 22 (b "else" 21 N N) (b "if" 23 N N))) (b "while" 28 (b "true" 26 (b "return" 25 N N) (b "void" 27 N N)) (b "||" 30 (b "{" 29 N N) (b "}" 31 N N))))
+resWords = b "==" 18 (b "-" 9 (b "*" 5 (b "(" 3 (b "&&" 2 (b "!=" 1 N N) N) (b ")" 4 N N)) (b "++" 7 (b "+" 6 N N) (b "," 8 N N))) (b "<" 14 (b "::" 12 (b "/" 11 (b "--" 10 N N) N) (b ";" 13 N N)) (b "<=" 16 (b "<<" 15 N N) (b "=" 17 N N)))) (b "int" 27 (b "double" 23 (b ">>" 21 (b ">=" 20 (b ">" 19 N N) N) (b "bool" 22 N N)) (b "false" 25 (b "else" 24 N N) (b "if" 26 N N))) (b "while" 31 (b "true" 29 (b "return" 28 N N) (b "void" 30 N N)) (b "||" 33 (b "{" 32 N N) (b "}" 34 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

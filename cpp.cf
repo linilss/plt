@@ -7,7 +7,7 @@ PDefs. Program    ::= [Def] ;
 
 terminator Def "" ;
 
-DFun.      Def    ::= Type "(" [Arg] ")" "{" [Stm] "}" ;
+DFun.      Def    ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
 separator  Arg "," ;
 terminator Stm "" ;
 
@@ -25,13 +25,14 @@ SBlock.  Stm    ::= "{" [Stm] "}" ;
 SIfElse. Stm    ::= "if" "(" Exp ")" Stm "else" Stm ;
 
 EInt.    Exp15  ::= Integer ;
+EString.  Exp15  ::= String ;
 EDouble. Exp15  ::= Double ;
 ETrue.   Exp15  ::= "true" ;
 EFalse.  Exp15  ::= "false" ;
-EId.     Exp15  ::= Id ;
 
-ECall.    Exp15  ::= Id "(" [Exp] ")" ;
+EQId.    Exp15  ::= [QId] ;
 
+ECall.   Exp14  ::= Id "(" [Exp] ")" ;
 EPIncr.  Exp14  ::= Exp15 "++" ;
 EPDecr.  Exp14  ::= Exp15 "--" ;
 
@@ -39,14 +40,16 @@ EIncr.   Exp13  ::= "++" Exp14 ;
 EDecr.   Exp13  ::= "--" Exp14 ;
 ENeg.    Exp13  ::= "-"  Exp14 ;
 
-EMul.  Exp12  ::= Exp12 "*"  Exp13 ;
+EMul.    Exp12  ::= Exp12 "*"  Exp13 ;
 EDiv.    Exp12  ::= Exp12 "/"  Exp13 ;
-EAdd.   Exp11  ::= Exp11 "+"  Exp12 ;
-ESub.  Exp11  ::= Exp11 "-"  Exp12 ;
+EAdd.    Exp11  ::= Exp11 "+"  Exp12 ;
+ESub.    Exp11  ::= Exp11 "-"  Exp12 ;
+ERS.     Exp10  ::= Exp10 ">>" Exp11 ;
+ELS.     Exp10  ::= Exp10 "<<" Exp11 ;
 ELt.     Exp9   ::= Exp9  "<"  Exp10 ;
 EGt.     Exp9   ::= Exp9  ">"  Exp10 ;
-ELEq.   Exp9   ::= Exp9  "<=" Exp10 ;
-EGEq.   Exp9   ::= Exp9  ">=" Exp10 ;
+ELEq.    Exp9   ::= Exp9  "<=" Exp10 ;
+EGEq.    Exp9   ::= Exp9  ">=" Exp10 ;
 
 EEq.     Exp8   ::= Exp8  "==" Exp9 ;
 ENEq.    Exp8   ::= Exp8  "!=" Exp9 ;
@@ -56,10 +59,15 @@ EAss.    Exp2   ::= Exp3 "=" Exp2 ;
 
 coercions Exp 15 ;
 separator Exp "," ;
+separator nonempty Id "," ;
+separator nonempty QId "::" ;
+
+QIdent. QId ::= Id ;
 
 Tbool.   Type ::= "bool" ;
 Tdouble. Type ::= "double" ;
 Tint.    Type ::= "int" ;
 Tvoid.   Type ::= "void" ;
+Tqualified. Type  ::= [QId] ;
 
 position token Id (letter (letter | digit | '_')*) ;

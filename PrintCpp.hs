@@ -81,7 +81,8 @@ instance Print Double where
 
 instance Print Id where
   prt _ (Id (_,i)) = doc (showString ( i))
-
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 
 
 instance Print Program where
@@ -90,7 +91,7 @@ instance Print Program where
 
 instance Print Def where
   prt i e = case e of
-    DFun type_ args stms -> prPrec i 0 (concatD [prt 0 type_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString "{"), prt 0 stms, doc (showString "}")])
+    DFun type_ id args stms -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString "{"), prt 0 stms, doc (showString "}")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Arg where
@@ -113,11 +114,12 @@ instance Print Stm where
 instance Print Exp where
   prt i e = case e of
     EInt n -> prPrec i 15 (concatD [prt 0 n])
+    EString str -> prPrec i 15 (concatD [prt 0 str])
     EDouble d -> prPrec i 15 (concatD [prt 0 d])
     ETrue -> prPrec i 15 (concatD [doc (showString "true")])
     EFalse -> prPrec i 15 (concatD [doc (showString "false")])
-    EId id -> prPrec i 15 (concatD [prt 0 id])
-    ECall id exps -> prPrec i 15 (concatD [prt 0 id, doc (showString "("), prt 0 exps, doc (showString ")")])
+    EQId qids -> prPrec i 15 (concatD [prt 0 qids])
+    ECall id exps -> prPrec i 14 (concatD [prt 0 id, doc (showString "("), prt 0 exps, doc (showString ")")])
     EPIncr exp -> prPrec i 14 (concatD [prt 15 exp, doc (showString "++")])
     EPDecr exp -> prPrec i 14 (concatD [prt 15 exp, doc (showString "--")])
     EIncr exp -> prPrec i 13 (concatD [doc (showString "++"), prt 14 exp])
@@ -127,6 +129,8 @@ instance Print Exp where
     EDiv exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "/"), prt 13 exp2])
     EAdd exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "+"), prt 12 exp2])
     ESub exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "-"), prt 12 exp2])
+    ERS exp1 exp2 -> prPrec i 10 (concatD [prt 10 exp1, doc (showString ">>"), prt 11 exp2])
+    ELS exp1 exp2 -> prPrec i 10 (concatD [prt 10 exp1, doc (showString "<<"), prt 11 exp2])
     ELt exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString "<"), prt 10 exp2])
     EGt exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString ">"), prt 10 exp2])
     ELEq exp1 exp2 -> prPrec i 9 (concatD [prt 9 exp1, doc (showString "<="), prt 10 exp2])
@@ -139,11 +143,17 @@ instance Print Exp where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
+instance Print QId where
+  prt i e = case e of
+    QIdent id -> prPrec i 0 (concatD [prt 0 id])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
 instance Print Type where
   prt i e = case e of
     Tbool -> prPrec i 0 (concatD [doc (showString "bool")])
     Tdouble -> prPrec i 0 (concatD [doc (showString "double")])
     Tint -> prPrec i 0 (concatD [doc (showString "int")])
     Tvoid -> prPrec i 0 (concatD [doc (showString "void")])
+    Tqualified qids -> prPrec i 0 (concatD [prt 0 qids])
 
 
