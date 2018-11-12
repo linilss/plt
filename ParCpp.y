@@ -108,7 +108,7 @@ Exp15 : Integer { AbsCpp.EInt $1 }
       | 'true' { AbsCpp.ETrue }
       | 'false' { AbsCpp.EFalse }
       | Id { AbsCpp.EId $1 }
-      | Id '(' ListExp ')' { AbsCpp.EApp $1 $3 }
+      | Id '(' ListExp ')' { AbsCpp.ECall $1 $3 }
       | '(' Exp ')' { $2 }
 Exp14 :: { Exp }
 Exp14 : Exp15 '++' { AbsCpp.EPIncr $1 }
@@ -117,20 +117,21 @@ Exp14 : Exp15 '++' { AbsCpp.EPIncr $1 }
 Exp13 :: { Exp }
 Exp13 : '++' Exp14 { AbsCpp.EIncr $2 }
       | '--' Exp14 { AbsCpp.EDecr $2 }
+      | '-' Exp14 { AbsCpp.ENeg $2 }
       | Exp14 { $1 }
 Exp12 :: { Exp }
-Exp12 : Exp12 '*' Exp13 { AbsCpp.ETimes $1 $3 }
+Exp12 : Exp12 '*' Exp13 { AbsCpp.EMul $1 $3 }
       | Exp12 '/' Exp13 { AbsCpp.EDiv $1 $3 }
       | Exp13 { $1 }
 Exp11 :: { Exp }
-Exp11 : Exp11 '+' Exp12 { AbsCpp.EPlus $1 $3 }
-      | Exp11 '-' Exp12 { AbsCpp.EMinus $1 $3 }
+Exp11 : Exp11 '+' Exp12 { AbsCpp.EAdd $1 $3 }
+      | Exp11 '-' Exp12 { AbsCpp.ESub $1 $3 }
       | Exp12 { $1 }
 Exp9 :: { Exp }
 Exp9 : Exp9 '<' Exp10 { AbsCpp.ELt $1 $3 }
      | Exp9 '>' Exp10 { AbsCpp.EGt $1 $3 }
-     | Exp9 '<=' Exp10 { AbsCpp.ELtEq $1 $3 }
-     | Exp9 '>=' Exp10 { AbsCpp.EGtWq $1 $3 }
+     | Exp9 '<=' Exp10 { AbsCpp.ELEq $1 $3 }
+     | Exp9 '>=' Exp10 { AbsCpp.EGEq $1 $3 }
      | Exp10 { $1 }
 Exp8 :: { Exp }
 Exp8 : Exp8 '==' Exp9 { AbsCpp.EEq $1 $3 }

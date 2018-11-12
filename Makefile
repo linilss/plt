@@ -1,5 +1,5 @@
 all:
-	happy -gcad ParCpp.y
+	happy -gca ParCpp.y
 	alex -g LexCpp.x
 	ghc --make TestCpp.hs -o TestCpp
 
@@ -8,5 +8,5 @@ clean:
 
 distclean: clean
 	-rm -f DocCpp.* LexCpp.* ParCpp.* LayoutCpp.* SkelCpp.* PrintCpp.* TestCpp.* AbsCpp.* TestCpp ErrM.* SharedString.* ComposOp.* cpp.dtd XMLCpp.* Makefile*
-
+	
 

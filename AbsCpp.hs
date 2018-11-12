@@ -33,19 +33,20 @@ data Exp
     | ETrue
     | EFalse
     | EId Id
-    | EApp Id [Exp]
+    | ECall Id [Exp]
     | EPIncr Exp
     | EPDecr Exp
     | EIncr Exp
     | EDecr Exp
-    | ETimes Exp Exp
+    | ENeg Exp
+    | EMul Exp Exp
     | EDiv Exp Exp
-    | EPlus Exp Exp
-    | EMinus Exp Exp
+    | EAdd Exp Exp
+    | ESub Exp Exp
     | ELt Exp Exp
     | EGt Exp Exp
-    | ELtEq Exp Exp
-    | EGtWq Exp Exp
+    | ELEq Exp Exp
+    | EGEq Exp Exp
     | EEq Exp Exp
     | ENEq Exp Exp
     | EAnd Exp Exp

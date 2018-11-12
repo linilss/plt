@@ -38,13 +38,13 @@ The reserved words used in cpp are the following:
 The symbols used in cpp are the following:
   | ( | ) | { | }
   | , | ; | = | ++
-  | -- | * | / | +
-  | - | < | > | <=
+  | -- | - | * | /
+  | + | < | > | <=
   | >= | == | != | &&
   | || |  |  | 
 
 ===Comments===
-There are no single-line comments in the grammar.There are no multiple-line comments in the grammar.
+Single-line comments begin with //.Multiple-line comments are  enclosed with /* and */.
 
 ==The syntactic structure of cpp==
 Non-terminals are enclosed between < and >. 
@@ -81,6 +81,7 @@ All other symbols are terminals.
   |  |  **|**  | //Exp15// 
   | //Exp13// | -> | ``++`` //Exp14// 
   |  |  **|**  | ``--`` //Exp14// 
+  |  |  **|**  | ``-`` //Exp14// 
   |  |  **|**  | //Exp14// 
   | //Exp12// | -> | //Exp12// ``*`` //Exp13// 
   |  |  **|**  | //Exp12// ``/`` //Exp13// 

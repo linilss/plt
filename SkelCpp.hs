@@ -37,19 +37,20 @@ transExp x = case x of
   ETrue -> failure x
   EFalse -> failure x
   EId id -> failure x
-  EApp id exps -> failure x
+  ECall id exps -> failure x
   EPIncr exp -> failure x
   EPDecr exp -> failure x
   EIncr exp -> failure x
   EDecr exp -> failure x
-  ETimes exp1 exp2 -> failure x
+  ENeg exp -> failure x
+  EMul exp1 exp2 -> failure x
   EDiv exp1 exp2 -> failure x
-  EPlus exp1 exp2 -> failure x
-  EMinus exp1 exp2 -> failure x
+  EAdd exp1 exp2 -> failure x
+  ESub exp1 exp2 -> failure x
   ELt exp1 exp2 -> failure x
   EGt exp1 exp2 -> failure x
-  ELtEq exp1 exp2 -> failure x
-  EGtWq exp1 exp2 -> failure x
+  ELEq exp1 exp2 -> failure x
+  EGEq exp1 exp2 -> failure x
   EEq exp1 exp2 -> failure x
   ENEq exp1 exp2 -> failure x
   EAnd exp1 exp2 -> failure x
