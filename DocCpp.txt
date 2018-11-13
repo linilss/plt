@@ -38,15 +38,17 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in cpp are the following:
   | ``bool`` | ``double`` | ``else`` | ``false``
   | ``if`` | ``int`` | ``return`` | ``true``
-  | ``using`` | ``void`` | ``while`` | 
+  | ``typedef`` | ``using`` | ``void`` | ``while``
 
 The symbols used in cpp are the following:
   | ; | ( | ) | {
-  | } | , | = | ++
-  | -- | - | * | /
-  | + | >> | << | <
-  | > | <= | >= | ==
-  | != | && | || | ::
+  | } | , | = | .
+  | -> | ++ | -- | [
+  | ] | - | * | /
+  | % | + | >> | <<
+  | < | > | <= | >=
+  | == | != | && | ||
+  | ? | : | :: | 
 
 ===Comments===
 Single-line comments begin with //, #.Multiple-line comments are  enclosed with /* and */.
@@ -69,6 +71,7 @@ All other symbols are terminals.
   |  |  **|**  | //Stm// //[Stm]// 
   | //Arg// | -> | //Type// //Id// 
   | //Stm// | -> | //Exp// ``;`` 
+  |  |  **|**  | ``typedef`` //Stm// 
   |  |  **|**  | //Type// //Id// ``;`` 
   |  |  **|**  | //Type// //Id// ``,`` //[Id]// ``;`` 
   |  |  **|**  | //Type// //Id// ``=`` //Exp// ``;`` 
@@ -80,14 +83,18 @@ All other symbols are terminals.
   |  |  **|**  | ``using`` //Exp// 
   | //Exp15// | -> | //Integer// 
   |  |  **|**  | //String// 
+  |  |  **|**  | //String// //Exp// 
   |  |  **|**  | //Double// 
   |  |  **|**  | ``true`` 
   |  |  **|**  | ``false`` 
   |  |  **|**  | //QId// 
   |  |  **|**  | ``(`` //Exp// ``)`` 
-  | //Exp14// | -> | //Id// ``(`` //[Exp]// ``)`` 
+  | //Exp14// | -> | //Id// ``.`` //Exp// 
+  |  |  **|**  | //Id// ``->`` //Exp// 
+  |  |  **|**  | //Id// ``(`` //[Exp]// ``)`` 
   |  |  **|**  | //Exp15// ``++`` 
   |  |  **|**  | //Exp15// ``--`` 
+  |  |  **|**  | //Id// ``[`` //Exp// ``]`` 
   |  |  **|**  | //Exp15// 
   | //Exp13// | -> | ``++`` //Exp14// 
   |  |  **|**  | ``--`` //Exp14// 
@@ -95,6 +102,7 @@ All other symbols are terminals.
   |  |  **|**  | //Exp14// 
   | //Exp12// | -> | //Exp12// ``*`` //Exp13// 
   |  |  **|**  | //Exp12// ``/`` //Exp13// 
+  |  |  **|**  | //Exp12// ``%`` //Exp13// 
   |  |  **|**  | //Exp13// 
   | //Exp11// | -> | //Exp11// ``+`` //Exp12// 
   |  |  **|**  | //Exp11// ``-`` //Exp12// 
@@ -115,6 +123,7 @@ All other symbols are terminals.
   | //Exp3// | -> | //Exp3// ``||`` //Exp4// 
   |  |  **|**  | //Exp4// 
   | //Exp2// | -> | //Exp3// ``=`` //Exp2// 
+  |  |  **|**  | //Exp3// ``?`` //Exp2// ``:`` //Exp2// 
   |  |  **|**  | //Exp3// 
   | //Exp// | -> | //Exp1// 
   | //Exp1// | -> | //Exp2// 
@@ -130,14 +139,13 @@ All other symbols are terminals.
   |  |  **|**  | //QId// ``::`` //[QId]// 
   | //QId// | -> | //Id// 
   |  |  **|**  | //[QIdElem]// 
-  | //Type// | -> | //QId// 
-  |  |  **|**  | ``bool`` 
-  |  |  **|**  | ``double`` 
-  |  |  **|**  | ``int`` 
-  |  |  **|**  | ``void`` 
-  | //Types// | -> | //Type// 
   | //QIdElem// | -> | //Id// 
   | //[QIdElem]// | -> | //QIdElem// 
   |  |  **|**  | //QIdElem// ``::`` //[QIdElem]// 
+  | //Type// | -> | ``bool`` 
+  |  |  **|**  | ``double`` 
+  |  |  **|**  | ``int`` 
+  |  |  **|**  | ``void`` 
+  |  |  **|**  | //QId// 
 
 

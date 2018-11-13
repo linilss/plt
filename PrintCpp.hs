@@ -104,6 +104,7 @@ instance Print Arg where
 instance Print Stm where
   prt i e = case e of
     SExp exp -> prPrec i 0 (concatD [prt 0 exp, doc (showString ";")])
+    STypedef stm -> prPrec i 0 (concatD [doc (showString "typedef"), prt 0 stm])
     SDecl type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString ";")])
     SDecls type_ id ids -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString ","), prt 0 ids, doc (showString ";")])
     SInit type_ id exp -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString "="), prt 0 exp, doc (showString ";")])
@@ -119,18 +120,22 @@ instance Print Exp where
   prt i e = case e of
     EInt n -> prPrec i 15 (concatD [prt 0 n])
     EString str -> prPrec i 15 (concatD [prt 0 str])
+    EStrings str exp -> prPrec i 15 (concatD [prt 0 str, prt 0 exp])
     EDouble d -> prPrec i 15 (concatD [prt 0 d])
     ETrue -> prPrec i 15 (concatD [doc (showString "true")])
     EFalse -> prPrec i 15 (concatD [doc (showString "false")])
     EQId qid -> prPrec i 15 (concatD [prt 0 qid])
+    EStrProj id exp -> prPrec i 14 (concatD [prt 0 id, doc (showString "."), prt 0 exp])
     ECall id exps -> prPrec i 14 (concatD [prt 0 id, doc (showString "("), prt 0 exps, doc (showString ")")])
     EPIncr exp -> prPrec i 14 (concatD [prt 15 exp, doc (showString "++")])
     EPDecr exp -> prPrec i 14 (concatD [prt 15 exp, doc (showString "--")])
+    EIndex id exp -> prPrec i 14 (concatD [prt 0 id, doc (showString "["), prt 0 exp, doc (showString "]")])
     EIncr exp -> prPrec i 13 (concatD [doc (showString "++"), prt 14 exp])
     EDecr exp -> prPrec i 13 (concatD [doc (showString "--"), prt 14 exp])
     ENeg exp -> prPrec i 13 (concatD [doc (showString "-"), prt 14 exp])
     EMul exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "*"), prt 13 exp2])
     EDiv exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "/"), prt 13 exp2])
+    EMod exp1 exp2 -> prPrec i 12 (concatD [prt 12 exp1, doc (showString "%"), prt 13 exp2])
     EAdd exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "+"), prt 12 exp2])
     ESub exp1 exp2 -> prPrec i 11 (concatD [prt 11 exp1, doc (showString "-"), prt 12 exp2])
     ERS exp1 exp2 -> prPrec i 10 (concatD [prt 10 exp1, doc (showString ">>"), prt 11 exp2])
@@ -144,6 +149,7 @@ instance Print Exp where
     EAnd exp1 exp2 -> prPrec i 4 (concatD [prt 4 exp1, doc (showString "&&"), prt 5 exp2])
     EOr exp1 exp2 -> prPrec i 3 (concatD [prt 3 exp1, doc (showString "||"), prt 4 exp2])
     EAss exp1 exp2 -> prPrec i 2 (concatD [prt 3 exp1, doc (showString "="), prt 2 exp2])
+    ECond exp1 exp2 exp3 -> prPrec i 2 (concatD [prt 3 exp1, doc (showString "?"), prt 2 exp2, doc (showString ":"), prt 2 exp3])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
@@ -153,21 +159,17 @@ instance Print QId where
     QIdElems qidelems -> prPrec i 0 (concatD [prt 0 qidelems])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
-instance Print Type where
-  prt i e = case e of
-    TQConst qid -> prPrec i 0 (concatD [prt 0 qid])
-    Tbool -> prPrec i 0 (concatD [doc (showString "bool")])
-    Tdouble -> prPrec i 0 (concatD [doc (showString "double")])
-    Tint -> prPrec i 0 (concatD [doc (showString "int")])
-    Tvoid -> prPrec i 0 (concatD [doc (showString "void")])
-
-instance Print Types where
-  prt i e = case e of
-    TypeListElem type_ -> prPrec i 0 (concatD [prt 0 type_])
-
 instance Print QIdElem where
   prt i e = case e of
     QIdElemId id -> prPrec i 0 (concatD [prt 0 id])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
+instance Print Type where
+  prt i e = case e of
+    Tbool -> prPrec i 0 (concatD [doc (showString "bool")])
+    Tdouble -> prPrec i 0 (concatD [doc (showString "double")])
+    Tint -> prPrec i 0 (concatD [doc (showString "int")])
+    Tvoid -> prPrec i 0 (concatD [doc (showString "void")])
+    TQConst qid -> prPrec i 0 (concatD [prt 0 qid])
+
 

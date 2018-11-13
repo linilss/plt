@@ -1,8 +1,5 @@
-test:
-	./TestCpp < 3-med.cc
-
 all:
-	happy -gcad ParCpp.y
+	happy -gca ParCpp.y
 	alex -g LexCpp.x
 	ghc --make TestCpp.hs -o TestCpp
 

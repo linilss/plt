@@ -19,6 +19,7 @@ data Arg = ADecl Type Id
 
 data Stm
     = SExp Exp
+    | STypedef Stm
     | SDecl Type Id
     | SDecls Type Id [Id]
     | SInit Type Id Exp
@@ -33,18 +34,22 @@ data Stm
 data Exp
     = EInt Integer
     | EString String
+    | EStrings String Exp
     | EDouble Double
     | ETrue
     | EFalse
     | EQId QId
+    | EStrProj Id Exp
     | ECall Id [Exp]
     | EPIncr Exp
     | EPDecr Exp
+    | EIndex Id Exp
     | EIncr Exp
     | EDecr Exp
     | ENeg Exp
     | EMul Exp Exp
     | EDiv Exp Exp
+    | EMod Exp Exp
     | EAdd Exp Exp
     | ESub Exp Exp
     | ERS Exp Exp
@@ -58,17 +63,15 @@ data Exp
     | EAnd Exp Exp
     | EOr Exp Exp
     | EAss Exp Exp
+    | ECond Exp Exp Exp
   deriving (Eq, Ord, Show, Read)
 
 data QId = QIdent Id | QIdElems [QIdElem]
   deriving (Eq, Ord, Show, Read)
 
-data Type = TQConst QId | Tbool | Tdouble | Tint | Tvoid
-  deriving (Eq, Ord, Show, Read)
-
-data Types = TypeListElem Type
-  deriving (Eq, Ord, Show, Read)
-
 data QIdElem = QIdElemId Id
+  deriving (Eq, Ord, Show, Read)
+
+data Type = Tbool | Tdouble | Tint | Tvoid | TQConst QId
   deriving (Eq, Ord, Show, Read)
 
