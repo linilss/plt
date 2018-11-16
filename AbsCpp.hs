@@ -12,10 +12,14 @@ newtype Id = Id ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
 
-data Def = DUsing QId | DFun Type Id [Arg] [Stm]
+data Def
+    = DUsing QId
+    | DTD QId Id
+    | DFun Type Id [Arg] [Stm]
+    | DFunDecl Type Id [Arg]
   deriving (Eq, Ord, Show, Read)
 
-data Arg = ADecl Type Id
+data Arg = ACon Arg | ADecl Type Id | ANoId Type
   deriving (Eq, Ord, Show, Read)
 
 data Stm
@@ -68,12 +72,12 @@ data Exp
     | ECond Exp Exp Exp
   deriving (Eq, Ord, Show, Read)
 
-data QId = QIdent Id | QIdElems [QIdElem]
-  deriving (Eq, Ord, Show, Read)
-
 data QIdElem = QIdElemId Id
   deriving (Eq, Ord, Show, Read)
 
-data Type = Tbool | Tdouble | Tint | Tvoid | TQConst QId | TRef Ref
+data QId = QIdElems [QIdElem]
+  deriving (Eq, Ord, Show, Read)
+
+data Type = Tbool | Tdouble | Tint | Tvoid | TQId [QId] | TRef Ref
   deriving (Eq, Ord, Show, Read)
 

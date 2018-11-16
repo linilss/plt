@@ -34,8 +34,8 @@ import ErrM
 %name pListExp ListExp
 %name pListId ListId
 %name pListQId ListQId
-%name pQId QId
 %name pQIdElem QIdElem
+%name pQId QId
 %name pListQIdElem ListQIdElem
 %name pType Type
 -- no lexer declaration
@@ -71,21 +71,22 @@ import ErrM
   '[' { PT _ (TS _ 27) }
   ']' { PT _ (TS _ 28) }
   'bool' { PT _ (TS _ 29) }
-  'double' { PT _ (TS _ 30) }
-  'else' { PT _ (TS _ 31) }
-  'false' { PT _ (TS _ 32) }
-  'if' { PT _ (TS _ 33) }
-  'int' { PT _ (TS _ 34) }
-  'return' { PT _ (TS _ 35) }
-  'throw' { PT _ (TS _ 36) }
-  'true' { PT _ (TS _ 37) }
-  'typedef' { PT _ (TS _ 38) }
-  'using' { PT _ (TS _ 39) }
-  'void' { PT _ (TS _ 40) }
-  'while' { PT _ (TS _ 41) }
-  '{' { PT _ (TS _ 42) }
-  '||' { PT _ (TS _ 43) }
-  '}' { PT _ (TS _ 44) }
+  'const' { PT _ (TS _ 30) }
+  'double' { PT _ (TS _ 31) }
+  'else' { PT _ (TS _ 32) }
+  'false' { PT _ (TS _ 33) }
+  'if' { PT _ (TS _ 34) }
+  'int' { PT _ (TS _ 35) }
+  'return' { PT _ (TS _ 36) }
+  'throw' { PT _ (TS _ 37) }
+  'true' { PT _ (TS _ 38) }
+  'typedef' { PT _ (TS _ 39) }
+  'using' { PT _ (TS _ 40) }
+  'void' { PT _ (TS _ 41) }
+  'while' { PT _ (TS _ 42) }
+  '{' { PT _ (TS _ 43) }
+  '||' { PT _ (TS _ 44) }
+  '}' { PT _ (TS _ 45) }
 
 L_integ  { PT _ (TI $$) }
 L_quoted { PT _ (TL $$) }
@@ -108,7 +109,9 @@ ListDef :: { [Def] }
 ListDef : {- empty -} { [] } | ListDef Def { flip (:) $1 $2 }
 Def :: { Def }
 Def : 'using' QId ';' { AbsCpp.DUsing $2 }
+    | 'typedef' QId Id ';' { AbsCpp.DTD $2 $3 }
     | Type Id '(' ListArg ')' '{' ListStm '}' { AbsCpp.DFun $1 $2 $4 (reverse $7) }
+    | Type Id '(' ListArg ')' ';' { AbsCpp.DFunDecl $1 $2 $4 }
 ListArg :: { [Arg] }
 ListArg : {- empty -} { [] }
         | Arg { (:[]) $1 }
@@ -116,7 +119,9 @@ ListArg : {- empty -} { [] }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] } | ListStm Stm { flip (:) $1 $2 }
 Arg :: { Arg }
-Arg : Type Id { AbsCpp.ADecl $1 $2 }
+Arg : 'const' Arg { AbsCpp.ACon $2 }
+    | Type Id { AbsCpp.ADecl $1 $2 }
+    | Type { AbsCpp.ANoId $1 }
 Stm :: { Stm }
 Stm : Exp ';' { AbsCpp.SExp $1 }
     | 'typedef' Stm { AbsCpp.STypedef $2 }
@@ -201,10 +206,10 @@ ListId :: { [Id] }
 ListId : Id { (:[]) $1 } | Id ',' ListId { (:) $1 $3 }
 ListQId :: { [QId] }
 ListQId : QId { (:[]) $1 } | QId '::' ListQId { (:) $1 $3 }
-QId :: { QId }
-QId : Id { AbsCpp.QIdent $1 } | ListQIdElem { AbsCpp.QIdElems $1 }
 QIdElem :: { QIdElem }
 QIdElem : Id { AbsCpp.QIdElemId $1 }
+QId :: { QId }
+QId : ListQIdElem { AbsCpp.QIdElems $1 }
 ListQIdElem :: { [QIdElem] }
 ListQIdElem : QIdElem { (:[]) $1 }
             | QIdElem '::' ListQIdElem { (:) $1 $3 }
@@ -213,7 +218,7 @@ Type : 'bool' { AbsCpp.Tbool }
      | 'double' { AbsCpp.Tdouble }
      | 'int' { AbsCpp.Tint }
      | 'void' { AbsCpp.Tvoid }
-     | QId { AbsCpp.TQConst $1 }
+     | ListQId { AbsCpp.TQId $1 }
      | Ref { AbsCpp.TRef $1 }
 {
 
