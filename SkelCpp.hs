@@ -9,6 +9,9 @@ type Result = Err String
 failure :: Show a => a -> Result
 failure x = Bad $ "Undefined case: " ++ show x
 
+transRef :: Ref -> Result
+transRef x = case x of
+  Ref string -> failure x
 transId :: Id -> Result
 transId x = case x of
   Id string -> failure x
@@ -34,7 +37,8 @@ transStm x = case x of
   SBlock stms -> failure x
   SIf exp stm -> failure x
   SIfElse exp stm1 stm2 -> failure x
-  SUsing exp -> failure x
+  SUsing qid -> failure x
+  SThr exp -> failure x
 transExp :: Exp -> Result
 transExp x = case x of
   EInt integer -> failure x
@@ -83,4 +87,5 @@ transType x = case x of
   Tint -> failure x
   Tvoid -> failure x
   TQConst qid -> failure x
+  TRef ref -> failure x
 
