@@ -30,7 +30,7 @@ followed by an unsigned or negative exponent.
 
 
 Ref literals are recognized by the regular expression
-`````{"const "} letter (letter | digit | '_')* '&'`````
+`````letter (letter | digit | '_')* '&'`````
 
 Id literals are recognized by the regular expression
 `````letter (letter | digit | '_')*`````
@@ -40,10 +40,10 @@ Id literals are recognized by the regular expression
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in cpp are the following:
-  | ``bool`` | ``double`` | ``else`` | ``false``
-  | ``if`` | ``int`` | ``return`` | ``throw``
-  | ``true`` | ``typedef`` | ``using`` | ``void``
-  | ``while`` |  |  | 
+  | ``bool`` | ``const`` | ``double`` | ``else``
+  | ``false`` | ``if`` | ``int`` | ``return``
+  | ``throw`` | ``true`` | ``typedef`` | ``using``
+  | ``void`` | ``while`` |  | 
 
 The symbols used in cpp are the following:
   | ; | ( | ) | {
@@ -68,13 +68,17 @@ All other symbols are terminals.
   | //[Def]// | -> | **eps**
   |  |  **|**  | //Def// //[Def]// 
   | //Def// | -> | ``using`` //QId// ``;`` 
+  |  |  **|**  | ``typedef`` //QId// //Id// ``;`` 
   |  |  **|**  | //Type// //Id// ``(`` //[Arg]// ``)`` ``{`` //[Stm]// ``}`` 
+  |  |  **|**  | //Type// //Id// ``(`` //[Arg]// ``)`` ``;`` 
   | //[Arg]// | -> | **eps**
   |  |  **|**  | //Arg// 
   |  |  **|**  | //Arg// ``,`` //[Arg]// 
   | //[Stm]// | -> | **eps**
   |  |  **|**  | //Stm// //[Stm]// 
-  | //Arg// | -> | //Type// //Id// 
+  | //Arg// | -> | ``const`` //Arg// 
+  |  |  **|**  | //Type// //Id// 
+  |  |  **|**  | //Type// 
   | //Stm// | -> | //Exp// ``;`` 
   |  |  **|**  | ``typedef`` //Stm// 
   |  |  **|**  | //Type// //Id// ``;`` 
@@ -143,16 +147,15 @@ All other symbols are terminals.
   |  |  **|**  | //Id// ``,`` //[Id]// 
   | //[QId]// | -> | //QId// 
   |  |  **|**  | //QId// ``::`` //[QId]// 
-  | //QId// | -> | //Id// 
-  |  |  **|**  | //[QIdElem]// 
   | //QIdElem// | -> | //Id// 
+  | //QId// | -> | //[QIdElem]// 
   | //[QIdElem]// | -> | //QIdElem// 
   |  |  **|**  | //QIdElem// ``::`` //[QIdElem]// 
   | //Type// | -> | ``bool`` 
   |  |  **|**  | ``double`` 
   |  |  **|**  | ``int`` 
   |  |  **|**  | ``void`` 
-  |  |  **|**  | //QId// 
+  |  |  **|**  | //[QId]// 
   |  |  **|**  | //Ref// 
 
 

@@ -21,10 +21,14 @@ transProgram x = case x of
 transDef :: Def -> Result
 transDef x = case x of
   DUsing qid -> failure x
+  DTD qid id -> failure x
   DFun type_ id args stms -> failure x
+  DFunDecl type_ id args -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
+  ACon arg -> failure x
   ADecl type_ id -> failure x
+  ANoId type_ -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
   SExp exp -> failure x
@@ -73,19 +77,18 @@ transExp x = case x of
   EOr exp1 exp2 -> failure x
   EAss exp1 exp2 -> failure x
   ECond exp1 exp2 exp3 -> failure x
-transQId :: QId -> Result
-transQId x = case x of
-  QIdent id -> failure x
-  QIdElems qidelems -> failure x
 transQIdElem :: QIdElem -> Result
 transQIdElem x = case x of
   QIdElemId id -> failure x
+transQId :: QId -> Result
+transQId x = case x of
+  QIdElems qidelems -> failure x
 transType :: Type -> Result
 transType x = case x of
   Tbool -> failure x
   Tdouble -> failure x
   Tint -> failure x
   Tvoid -> failure x
-  TQConst qid -> failure x
+  TQId qids -> failure x
   TRef ref -> failure x
 

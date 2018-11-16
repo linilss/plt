@@ -96,12 +96,16 @@ instance Print Program where
 instance Print Def where
   prt i e = case e of
     DUsing qid -> prPrec i 0 (concatD [doc (showString "using"), prt 0 qid, doc (showString ";")])
+    DTD qid id -> prPrec i 0 (concatD [doc (showString "typedef"), prt 0 qid, prt 0 id, doc (showString ";")])
     DFun type_ id args stms -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString "{"), prt 0 stms, doc (showString "}")])
+    DFunDecl type_ id args -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ";")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Arg where
   prt i e = case e of
+    ACon arg -> prPrec i 0 (concatD [doc (showString "const"), prt 0 arg])
     ADecl type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id])
+    ANoId type_ -> prPrec i 0 (concatD [prt 0 type_])
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
@@ -158,15 +162,14 @@ instance Print Exp where
   prtList _ [] = (concatD [])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
-instance Print QId where
-  prt i e = case e of
-    QIdent id -> prPrec i 0 (concatD [prt 0 id])
-    QIdElems qidelems -> prPrec i 0 (concatD [prt 0 qidelems])
-  prtList _ [x] = (concatD [prt 0 x])
-  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
 instance Print QIdElem where
   prt i e = case e of
     QIdElemId id -> prPrec i 0 (concatD [prt 0 id])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
+instance Print QId where
+  prt i e = case e of
+    QIdElems qidelems -> prPrec i 0 (concatD [prt 0 qidelems])
   prtList _ [x] = (concatD [prt 0 x])
   prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "::"), prt 0 xs])
 instance Print Type where
@@ -175,7 +178,7 @@ instance Print Type where
     Tdouble -> prPrec i 0 (concatD [doc (showString "double")])
     Tint -> prPrec i 0 (concatD [doc (showString "int")])
     Tvoid -> prPrec i 0 (concatD [doc (showString "void")])
-    TQConst qid -> prPrec i 0 (concatD [prt 0 qid])
+    TQId qids -> prPrec i 0 (concatD [prt 0 qids])
     TRef ref -> prPrec i 0 (concatD [prt 0 ref])
 
 

@@ -6,11 +6,14 @@ comment     "//" ;
 comment     "/*" "*/" ;
 comment     "#" ;
 DUsing.     Def     ::= "using" QId ";";
+DTD.        Def     ::= "typedef" QId Id ";";
 DFun.       Def     ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
-separator   Arg     "," ;
+DFunDecl.   Def     ::= Type Id "(" [Arg] ")" ";" ;separator   Arg     "," ;
 terminator  Stm     "" ;
 
+ACon.       Arg     ::= "const" Arg ;  
 ADecl.      Arg     ::= Type Id ;
+ANoId.      Arg     ::= Type ;
 
 SExp.       Stm     ::= Exp ";" ;
 
@@ -76,7 +79,6 @@ separator   Exp "," ;
 separator   nonempty Id "," ;
 separator   nonempty QId "::" ;
 
-QIdent.     QId     ::= Id ;
 QIdElemId.  QIdElem ::= Id;
 QIdElems.   QId     ::= [QIdElem] ;
 separator   nonempty QIdElem "::" ;
@@ -85,8 +87,8 @@ Tbool.      Type    ::= "bool" ;
 Tdouble.    Type    ::= "double" ;
 Tint.       Type    ::= "int" ;
 Tvoid.      Type    ::= "void" ;
-TQConst.    Type    ::= QId;
+TQId.       Type    ::= [QId] ;
 TRef.       Type    ::= Ref ;
 
-position token Ref {"const "}(letter (letter | digit | '_')*'&') ;
+position token Ref (letter (letter | digit | '_')*'&') ;
 position token Id (letter (letter | digit | '_')*) ;
