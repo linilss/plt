@@ -5,46 +5,57 @@ terminator Def "" ;
 comment     "//" ;
 comment     "/*" "*/" ;
 comment     "#" ;
-DUsing.     Def     ::= "using" QId ";";
+DUsing.     Def     ::= "using" [QId] ";";
+DTD.        Def     ::= "typedef" [QId] Id ";";
 DFun.       Def     ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
+DFunDecl.   Def     ::= Type Id "(" [Arg] ")" ";" ;
 separator   Arg     "," ;
 terminator  Stm     "" ;
 
+ACon.       Arg     ::= "const" Arg ;  
 ADecl.      Arg     ::= Type Id ;
+ANoId.      Arg     ::= Type ;
 
 SExp.       Stm     ::= Exp ";" ;
 
 STypedef.   Stm     ::= "typedef" Stm ;  
+SCon.       Stm     ::= "const" Stm ;
 SDecl.      Stm     ::= Type Id ";" ;
 SDecls.     Stm     ::= Type Id "," [Id] ";" ;
 SInit.      Stm     ::= Type Id "=" Exp ";" ;
 
 SReturn.    Stm     ::= "return" Exp ";" ;
+SDoWhile.   Stm     ::= "do" Stm "while" "(" Exp ")" ";" ;
 SWhile.     Stm     ::= "while" "(" Exp ")" Stm ;
+SFor.       Stm     ::= "for" "(" Stm Stm Exp ")" Stm ;
 SBlock.     Stm     ::= "{" [Stm] "}" ;
 SIf.        Stm     ::= "if" "(" Exp ")" Stm ;
 SIfElse.    Stm     ::= "if" "(" Exp ")" Stm "else" Stm ;
-SUsing.     Stm     ::= "using" Exp ;
+SUsing.     Stm     ::= "using" [QId] ";" ;
+SThr.       Stm     ::= "throw" Exp ";" ;
 
 
 EInt.       Exp15   ::= Integer ;
 EString.    Exp15   ::= String ;
 EStrings.   Exp15   ::= String Exp ;
 EDouble.    Exp15   ::= Double ;
+EChar.      Exp15   ::= Char ;
 ETrue.      Exp15   ::= "true" ;
 EFalse.     Exp15   ::= "false" ;
-EQId.       Exp15   ::= QId ;
+EQId.       Exp15   ::= [QId] ;
 
-EStrProj.   Exp14   ::= Id "." Exp ;
-EStrProj.   Exp14   ::= Id "->" Exp ;
-ECall.      Exp14   ::= Id "(" [Exp] ")" ;
+EDot.       Exp14   ::= Exp14 "." Exp15;
+EArrow.     Exp14   ::= Exp14 "->" Exp15;
+ECall.      Exp14   ::= Exp14 "(" [Exp] ")" ;
 EPIncr.     Exp14   ::= Exp15 "++" ;
 EPDecr.     Exp14   ::= Exp15 "--" ;
-EIndex.     Exp14   ::= Id "[" Exp "]" ;
+EIndex.     Exp14   ::= Exp15 "[" Exp "]" ;
 
 EIncr.      Exp13   ::= "++" Exp14 ;
 EDecr.      Exp13   ::= "--" Exp14 ;
 ENeg.       Exp13   ::= "-"  Exp14 ;
+EDeRef.     Exp13   ::= "*"  Exp14 ;
+ENot.       Exp13   ::= "!"  Exp14 ;
 
 EMul.       Exp12   ::= Exp12 "*"  Exp13 ;
 EDiv.       Exp12   ::= Exp12 "/"  Exp13 ;
@@ -73,18 +84,17 @@ ECond.      Exp2    ::= Exp3 "?" Exp2 ":" Exp2 ;
 coercions   Exp 15 ;
 separator   Exp "," ;
 separator   nonempty Id "," ;
-separator   nonempty QId "::" ;
 
-QIdent.     QId     ::= Id ;
-QIdElemId.  QIdElem ::= Id;
-QIdElems.   QId     ::= [QIdElem] ;
-separator   nonempty QIdElem "::" ;
+QCon.       QId     ::= Id;
+separator   nonempty QId "::" ;
 
 Tbool.      Type    ::= "bool" ;
 Tdouble.    Type    ::= "double" ;
 Tint.       Type    ::= "int" ;
 Tvoid.      Type    ::= "void" ;
-TQConst.    Type    ::= QId;
+Tchar.      Type    ::= "char" ;
+TQId.       Type    ::= [QId] ;
+TRef.       Type    ::= Ref ;
 
-
+position token Ref (letter (letter | digit | '_')*'&') ;
 position token Id (letter (letter | digit | '_')*) ;
