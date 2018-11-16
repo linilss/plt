@@ -13,8 +13,8 @@ data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
 
 data Def
-    = DUsing QId
-    | DTD QId Id
+    = DUsing [QId]
+    | DTD [QId] Id
     | DFun Type Id [Arg] [Stm]
     | DFunDecl Type Id [Arg]
   deriving (Eq, Ord, Show, Read)
@@ -25,15 +25,18 @@ data Arg = ACon Arg | ADecl Type Id | ANoId Type
 data Stm
     = SExp Exp
     | STypedef Stm
+    | SCon Stm
     | SDecl Type Id
     | SDecls Type Id [Id]
     | SInit Type Id Exp
     | SReturn Exp
+    | SDoWhile Stm Exp
     | SWhile Exp Stm
+    | SFor Stm Stm Exp Stm
     | SBlock [Stm]
     | SIf Exp Stm
     | SIfElse Exp Stm Stm
-    | SUsing QId
+    | SUsing [QId]
     | SThr Exp
   deriving (Eq, Ord, Show, Read)
 
@@ -42,17 +45,21 @@ data Exp
     | EString String
     | EStrings String Exp
     | EDouble Double
+    | EChar Char
     | ETrue
     | EFalse
-    | EQId QId
-    | EStrProj Id Exp
-    | ECall Id [Exp]
+    | EQId [QId]
+    | EDot Exp Exp
+    | EArrow Exp Exp
+    | ECall Exp [Exp]
     | EPIncr Exp
     | EPDecr Exp
-    | EIndex Id Exp
+    | EIndex Exp Exp
     | EIncr Exp
     | EDecr Exp
     | ENeg Exp
+    | EDeRef Exp
+    | ENot Exp
     | EMul Exp Exp
     | EDiv Exp Exp
     | EMod Exp Exp
@@ -72,12 +79,10 @@ data Exp
     | ECond Exp Exp Exp
   deriving (Eq, Ord, Show, Read)
 
-data QIdElem = QIdElemId Id
+data QId = QCon Id
   deriving (Eq, Ord, Show, Read)
 
-data QId = QIdElems [QIdElem]
-  deriving (Eq, Ord, Show, Read)
-
-data Type = Tbool | Tdouble | Tint | Tvoid | TQId [QId] | TRef Ref
+data Type
+    = Tbool | Tdouble | Tint | Tvoid | Tchar | TQId [QId] | TRef Ref
   deriving (Eq, Ord, Show, Read)
 

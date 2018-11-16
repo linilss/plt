@@ -20,8 +20,8 @@ transProgram x = case x of
   PDefs defs -> failure x
 transDef :: Def -> Result
 transDef x = case x of
-  DUsing qid -> failure x
-  DTD qid id -> failure x
+  DUsing qids -> failure x
+  DTD qids id -> failure x
   DFun type_ id args stms -> failure x
   DFunDecl type_ id args -> failure x
 transArg :: Arg -> Result
@@ -33,15 +33,18 @@ transStm :: Stm -> Result
 transStm x = case x of
   SExp exp -> failure x
   STypedef stm -> failure x
+  SCon stm -> failure x
   SDecl type_ id -> failure x
   SDecls type_ id ids -> failure x
   SInit type_ id exp -> failure x
   SReturn exp -> failure x
+  SDoWhile stm exp -> failure x
   SWhile exp stm -> failure x
+  SFor stm1 stm2 exp stm3 -> failure x
   SBlock stms -> failure x
   SIf exp stm -> failure x
   SIfElse exp stm1 stm2 -> failure x
-  SUsing qid -> failure x
+  SUsing qids -> failure x
   SThr exp -> failure x
 transExp :: Exp -> Result
 transExp x = case x of
@@ -49,17 +52,21 @@ transExp x = case x of
   EString string -> failure x
   EStrings string exp -> failure x
   EDouble double -> failure x
+  EChar char -> failure x
   ETrue -> failure x
   EFalse -> failure x
-  EQId qid -> failure x
-  EStrProj id exp -> failure x
-  ECall id exps -> failure x
+  EQId qids -> failure x
+  EDot exp1 exp2 -> failure x
+  EArrow exp1 exp2 -> failure x
+  ECall exp exps -> failure x
   EPIncr exp -> failure x
   EPDecr exp -> failure x
-  EIndex id exp -> failure x
+  EIndex exp1 exp2 -> failure x
   EIncr exp -> failure x
   EDecr exp -> failure x
   ENeg exp -> failure x
+  EDeRef exp -> failure x
+  ENot exp -> failure x
   EMul exp1 exp2 -> failure x
   EDiv exp1 exp2 -> failure x
   EMod exp1 exp2 -> failure x
@@ -77,18 +84,16 @@ transExp x = case x of
   EOr exp1 exp2 -> failure x
   EAss exp1 exp2 -> failure x
   ECond exp1 exp2 exp3 -> failure x
-transQIdElem :: QIdElem -> Result
-transQIdElem x = case x of
-  QIdElemId id -> failure x
 transQId :: QId -> Result
 transQId x = case x of
-  QIdElems qidelems -> failure x
+  QCon id -> failure x
 transType :: Type -> Result
 transType x = case x of
   Tbool -> failure x
   Tdouble -> failure x
   Tint -> failure x
   Tvoid -> failure x
+  Tchar -> failure x
   TQId qids -> failure x
   TRef ref -> failure x
 
