@@ -28,6 +28,10 @@ followed by an unsigned or negative exponent.
 
 
 
+
+Ref literals are recognized by the regular expression
+`````{"const "} letter (letter | digit | '_')* '&'`````
+
 Id literals are recognized by the regular expression
 `````letter (letter | digit | '_')*`````
 
@@ -37,8 +41,9 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in cpp are the following:
   | ``bool`` | ``double`` | ``else`` | ``false``
-  | ``if`` | ``int`` | ``return`` | ``true``
-  | ``typedef`` | ``using`` | ``void`` | ``while``
+  | ``if`` | ``int`` | ``return`` | ``throw``
+  | ``true`` | ``typedef`` | ``using`` | ``void``
+  | ``while`` |  |  | 
 
 The symbols used in cpp are the following:
   | ; | ( | ) | {
@@ -80,7 +85,8 @@ All other symbols are terminals.
   |  |  **|**  | ``{`` //[Stm]// ``}`` 
   |  |  **|**  | ``if`` ``(`` //Exp// ``)`` //Stm// 
   |  |  **|**  | ``if`` ``(`` //Exp// ``)`` //Stm// ``else`` //Stm// 
-  |  |  **|**  | ``using`` //Exp// 
+  |  |  **|**  | ``using`` //QId// ``;`` 
+  |  |  **|**  | ``throw`` //Exp// ``;`` 
   | //Exp15// | -> | //Integer// 
   |  |  **|**  | //String// 
   |  |  **|**  | //String// //Exp// 
@@ -147,5 +153,6 @@ All other symbols are terminals.
   |  |  **|**  | ``int`` 
   |  |  **|**  | ``void`` 
   |  |  **|**  | //QId// 
+  |  |  **|**  | //Ref// 
 
 

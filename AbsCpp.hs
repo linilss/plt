@@ -7,6 +7,7 @@ module AbsCpp where
 
 
 
+newtype Ref = Ref ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 newtype Id = Id ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
@@ -28,7 +29,8 @@ data Stm
     | SBlock [Stm]
     | SIf Exp Stm
     | SIfElse Exp Stm Stm
-    | SUsing Exp
+    | SUsing QId
+    | SThr Exp
   deriving (Eq, Ord, Show, Read)
 
 data Exp
@@ -72,6 +74,6 @@ data QId = QIdent Id | QIdElems [QIdElem]
 data QIdElem = QIdElemId Id
   deriving (Eq, Ord, Show, Read)
 
-data Type = Tbool | Tdouble | Tint | Tvoid | TQConst QId
+data Type = Tbool | Tdouble | Tint | Tvoid | TQConst QId | TRef Ref
   deriving (Eq, Ord, Show, Read)
 

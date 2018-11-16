@@ -79,6 +79,10 @@ instance Print Double where
 
 
 
+instance Print Ref where
+  prt _ (Ref (_,i)) = doc (showString ( i))
+
+
 instance Print Id where
   prt _ (Id (_,i)) = doc (showString ( i))
   prtList _ [x] = (concatD [prt 0 x])
@@ -113,7 +117,8 @@ instance Print Stm where
     SBlock stms -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stms, doc (showString "}")])
     SIf exp stm -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 exp, doc (showString ")"), prt 0 stm])
     SIfElse exp stm1 stm2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 exp, doc (showString ")"), prt 0 stm1, doc (showString "else"), prt 0 stm2])
-    SUsing exp -> prPrec i 0 (concatD [doc (showString "using"), prt 0 exp])
+    SUsing qid -> prPrec i 0 (concatD [doc (showString "using"), prt 0 qid, doc (showString ";")])
+    SThr exp -> prPrec i 0 (concatD [doc (showString "throw"), prt 0 exp, doc (showString ";")])
   prtList _ [] = (concatD [])
   prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Exp where
@@ -171,5 +176,6 @@ instance Print Type where
     Tint -> prPrec i 0 (concatD [doc (showString "int")])
     Tvoid -> prPrec i 0 (concatD [doc (showString "void")])
     TQConst qid -> prPrec i 0 (concatD [prt 0 qid])
+    TRef ref -> prPrec i 0 (concatD [prt 0 ref])
 
 

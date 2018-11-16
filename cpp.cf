@@ -24,7 +24,8 @@ SWhile.     Stm     ::= "while" "(" Exp ")" Stm ;
 SBlock.     Stm     ::= "{" [Stm] "}" ;
 SIf.        Stm     ::= "if" "(" Exp ")" Stm ;
 SIfElse.    Stm     ::= "if" "(" Exp ")" Stm "else" Stm ;
-SUsing.     Stm     ::= "using" Exp ;
+SUsing.     Stm     ::= "using" QId ";" ;
+SThr.       Stm     ::= "throw" Exp ";" ;
 
 
 EInt.       Exp15   ::= Integer ;
@@ -85,6 +86,7 @@ Tdouble.    Type    ::= "double" ;
 Tint.       Type    ::= "int" ;
 Tvoid.      Type    ::= "void" ;
 TQConst.    Type    ::= QId;
+TRef.       Type    ::= Ref ;
 
-
+position token Ref {"const "}(letter (letter | digit | '_')*'&') ;
 position token Id (letter (letter | digit | '_')*) ;

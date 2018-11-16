@@ -77,18 +77,20 @@ import ErrM
   'if' { PT _ (TS _ 33) }
   'int' { PT _ (TS _ 34) }
   'return' { PT _ (TS _ 35) }
-  'true' { PT _ (TS _ 36) }
-  'typedef' { PT _ (TS _ 37) }
-  'using' { PT _ (TS _ 38) }
-  'void' { PT _ (TS _ 39) }
-  'while' { PT _ (TS _ 40) }
-  '{' { PT _ (TS _ 41) }
-  '||' { PT _ (TS _ 42) }
-  '}' { PT _ (TS _ 43) }
+  'throw' { PT _ (TS _ 36) }
+  'true' { PT _ (TS _ 37) }
+  'typedef' { PT _ (TS _ 38) }
+  'using' { PT _ (TS _ 39) }
+  'void' { PT _ (TS _ 40) }
+  'while' { PT _ (TS _ 41) }
+  '{' { PT _ (TS _ 42) }
+  '||' { PT _ (TS _ 43) }
+  '}' { PT _ (TS _ 44) }
 
 L_integ  { PT _ (TI $$) }
 L_quoted { PT _ (TL $$) }
 L_doubl  { PT _ (TD $$) }
+L_Ref { PT _ (T_Ref _) }
 L_Id { PT _ (T_Id _) }
 
 
@@ -97,6 +99,7 @@ L_Id { PT _ (T_Id _) }
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 String  :: { String }  : L_quoted {  $1 }
 Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
+Ref    :: { Ref} : L_Ref { Ref (mkPosToken $1)}
 Id    :: { Id} : L_Id { Id (mkPosToken $1)}
 
 Program :: { Program }
@@ -125,7 +128,8 @@ Stm : Exp ';' { AbsCpp.SExp $1 }
     | '{' ListStm '}' { AbsCpp.SBlock (reverse $2) }
     | 'if' '(' Exp ')' Stm { AbsCpp.SIf $3 $5 }
     | 'if' '(' Exp ')' Stm 'else' Stm { AbsCpp.SIfElse $3 $5 $7 }
-    | 'using' Exp { AbsCpp.SUsing $2 }
+    | 'using' QId ';' { AbsCpp.SUsing $2 }
+    | 'throw' Exp ';' { AbsCpp.SThr $2 }
 Exp15 :: { Exp }
 Exp15 : Integer { AbsCpp.EInt $1 }
       | String { AbsCpp.EString $1 }
@@ -210,6 +214,7 @@ Type : 'bool' { AbsCpp.Tbool }
      | 'int' { AbsCpp.Tint }
      | 'void' { AbsCpp.Tvoid }
      | QId { AbsCpp.TQConst $1 }
+     | Ref { AbsCpp.TRef $1 }
 {
 
 returnM :: a -> Err a
