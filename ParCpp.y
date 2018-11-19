@@ -33,64 +33,67 @@ import ErrM
 %name pExp7 Exp7
 %name pListExp ListExp
 %name pListId ListId
-%name pListQId ListQId
-%name pQIdElem QIdElem
 %name pQId QId
-%name pListQIdElem ListQIdElem
+%name pListQId ListQId
 %name pType Type
 -- no lexer declaration
 %monad { Err } { thenM } { returnM }
 %tokentype {Token}
 %token
-  '!=' { PT _ (TS _ 1) }
-  '%' { PT _ (TS _ 2) }
-  '&&' { PT _ (TS _ 3) }
-  '(' { PT _ (TS _ 4) }
-  ')' { PT _ (TS _ 5) }
-  '*' { PT _ (TS _ 6) }
-  '+' { PT _ (TS _ 7) }
-  '++' { PT _ (TS _ 8) }
-  ',' { PT _ (TS _ 9) }
-  '-' { PT _ (TS _ 10) }
-  '--' { PT _ (TS _ 11) }
-  '->' { PT _ (TS _ 12) }
-  '.' { PT _ (TS _ 13) }
-  '/' { PT _ (TS _ 14) }
-  ':' { PT _ (TS _ 15) }
-  '::' { PT _ (TS _ 16) }
-  ';' { PT _ (TS _ 17) }
-  '<' { PT _ (TS _ 18) }
-  '<<' { PT _ (TS _ 19) }
-  '<=' { PT _ (TS _ 20) }
-  '=' { PT _ (TS _ 21) }
-  '==' { PT _ (TS _ 22) }
-  '>' { PT _ (TS _ 23) }
-  '>=' { PT _ (TS _ 24) }
-  '>>' { PT _ (TS _ 25) }
-  '?' { PT _ (TS _ 26) }
-  '[' { PT _ (TS _ 27) }
-  ']' { PT _ (TS _ 28) }
-  'bool' { PT _ (TS _ 29) }
-  'const' { PT _ (TS _ 30) }
-  'double' { PT _ (TS _ 31) }
-  'else' { PT _ (TS _ 32) }
-  'false' { PT _ (TS _ 33) }
-  'if' { PT _ (TS _ 34) }
-  'int' { PT _ (TS _ 35) }
-  'return' { PT _ (TS _ 36) }
-  'throw' { PT _ (TS _ 37) }
-  'true' { PT _ (TS _ 38) }
-  'typedef' { PT _ (TS _ 39) }
-  'using' { PT _ (TS _ 40) }
-  'void' { PT _ (TS _ 41) }
-  'while' { PT _ (TS _ 42) }
-  '{' { PT _ (TS _ 43) }
-  '||' { PT _ (TS _ 44) }
-  '}' { PT _ (TS _ 45) }
+  '!' { PT _ (TS _ 1) }
+  '!=' { PT _ (TS _ 2) }
+  '%' { PT _ (TS _ 3) }
+  '&&' { PT _ (TS _ 4) }
+  '(' { PT _ (TS _ 5) }
+  ')' { PT _ (TS _ 6) }
+  '*' { PT _ (TS _ 7) }
+  '+' { PT _ (TS _ 8) }
+  '++' { PT _ (TS _ 9) }
+  ',' { PT _ (TS _ 10) }
+  '-' { PT _ (TS _ 11) }
+  '--' { PT _ (TS _ 12) }
+  '->' { PT _ (TS _ 13) }
+  '.' { PT _ (TS _ 14) }
+  '/' { PT _ (TS _ 15) }
+  ':' { PT _ (TS _ 16) }
+  '::' { PT _ (TS _ 17) }
+  ';' { PT _ (TS _ 18) }
+  '<' { PT _ (TS _ 19) }
+  '<<' { PT _ (TS _ 20) }
+  '<=' { PT _ (TS _ 21) }
+  '=' { PT _ (TS _ 22) }
+  '==' { PT _ (TS _ 23) }
+  '>' { PT _ (TS _ 24) }
+  '>=' { PT _ (TS _ 25) }
+  '>>' { PT _ (TS _ 26) }
+  '?' { PT _ (TS _ 27) }
+  '[' { PT _ (TS _ 28) }
+  ']' { PT _ (TS _ 29) }
+  'bool' { PT _ (TS _ 30) }
+  'char' { PT _ (TS _ 31) }
+  'const' { PT _ (TS _ 32) }
+  'do' { PT _ (TS _ 33) }
+  'double' { PT _ (TS _ 34) }
+  'else' { PT _ (TS _ 35) }
+  'false' { PT _ (TS _ 36) }
+  'for' { PT _ (TS _ 37) }
+  'if' { PT _ (TS _ 38) }
+  'int' { PT _ (TS _ 39) }
+  'return' { PT _ (TS _ 40) }
+  'throw' { PT _ (TS _ 41) }
+  'true' { PT _ (TS _ 42) }
+  'typedef' { PT _ (TS _ 43) }
+  'using' { PT _ (TS _ 44) }
+  'void' { PT _ (TS _ 45) }
+  'while' { PT _ (TS _ 46) }
+  '{' { PT _ (TS _ 47) }
+  '||' { PT _ (TS _ 48) }
+  '}' { PT _ (TS _ 49) }
 
 L_integ  { PT _ (TI $$) }
 L_quoted { PT _ (TL $$) }
 L_doubl  { PT _ (TD $$) }
+L_charac { PT _ (TC $$) }
 L_Ref { PT _ (T_Ref _) }
 L_Id { PT _ (T_Id _) }
 
@@ -100,6 +103,7 @@ L_Id { PT _ (T_Id _) }
 Integer :: { Integer } : L_integ  { (read ( $1)) :: Integer }
 String  :: { String }  : L_quoted {  $1 }
 Double  :: { Double }  : L_doubl  { (read ( $1)) :: Double }
+Char    :: { Char }    : L_charac { (read ( $1)) :: Char }
 Ref    :: { Ref} : L_Ref { Ref (mkPosToken $1)}
 Id    :: { Id} : L_Id { Id (mkPosToken $1)}
 
@@ -108,8 +112,8 @@ Program : ListDef { AbsCpp.PDefs (reverse $1) }
 ListDef :: { [Def] }
 ListDef : {- empty -} { [] } | ListDef Def { flip (:) $1 $2 }
 Def :: { Def }
-Def : 'using' QId ';' { AbsCpp.DUsing $2 }
-    | 'typedef' QId Id ';' { AbsCpp.DTD $2 $3 }
+Def : 'using' ListQId ';' { AbsCpp.DUsing $2 }
+    | 'typedef' ListQId Id ';' { AbsCpp.DTD $2 $3 }
     | Type Id '(' ListArg ')' '{' ListStm '}' { AbsCpp.DFun $1 $2 $4 (reverse $7) }
     | Type Id '(' ListArg ')' ';' { AbsCpp.DFunDecl $1 $2 $4 }
 ListArg :: { [Arg] }
@@ -125,37 +129,43 @@ Arg : 'const' Arg { AbsCpp.ACon $2 }
 Stm :: { Stm }
 Stm : Exp ';' { AbsCpp.SExp $1 }
     | 'typedef' Stm { AbsCpp.STypedef $2 }
+    | 'const' Stm { AbsCpp.SCon $2 }
     | Type Id ';' { AbsCpp.SDecl $1 $2 }
     | Type Id ',' ListId ';' { AbsCpp.SDecls $1 $2 $4 }
     | Type Id '=' Exp ';' { AbsCpp.SInit $1 $2 $4 }
     | 'return' Exp ';' { AbsCpp.SReturn $2 }
+    | 'do' Stm 'while' '(' Exp ')' ';' { AbsCpp.SDoWhile $2 $5 }
     | 'while' '(' Exp ')' Stm { AbsCpp.SWhile $3 $5 }
+    | 'for' '(' Stm Stm Exp ')' Stm { AbsCpp.SFor $3 $4 $5 $7 }
     | '{' ListStm '}' { AbsCpp.SBlock (reverse $2) }
     | 'if' '(' Exp ')' Stm { AbsCpp.SIf $3 $5 }
     | 'if' '(' Exp ')' Stm 'else' Stm { AbsCpp.SIfElse $3 $5 $7 }
-    | 'using' QId ';' { AbsCpp.SUsing $2 }
+    | 'using' ListQId ';' { AbsCpp.SUsing $2 }
     | 'throw' Exp ';' { AbsCpp.SThr $2 }
 Exp15 :: { Exp }
 Exp15 : Integer { AbsCpp.EInt $1 }
       | String { AbsCpp.EString $1 }
       | String Exp { AbsCpp.EStrings $1 $2 }
       | Double { AbsCpp.EDouble $1 }
+      | Char { AbsCpp.EChar $1 }
       | 'true' { AbsCpp.ETrue }
       | 'false' { AbsCpp.EFalse }
-      | QId { AbsCpp.EQId $1 }
+      | ListQId { AbsCpp.EQId $1 }
       | '(' Exp ')' { $2 }
 Exp14 :: { Exp }
-Exp14 : Id '.' Exp { AbsCpp.EStrProj $1 $3 }
-      | Id '->' Exp { AbsCpp.EStrProj $1 $3 }
-      | Id '(' ListExp ')' { AbsCpp.ECall $1 $3 }
+Exp14 : Exp14 '.' Exp15 { AbsCpp.EDot $1 $3 }
+      | Exp14 '->' Exp15 { AbsCpp.EArrow $1 $3 }
+      | Exp14 '(' ListExp ')' { AbsCpp.ECall $1 $3 }
       | Exp15 '++' { AbsCpp.EPIncr $1 }
       | Exp15 '--' { AbsCpp.EPDecr $1 }
-      | Id '[' Exp ']' { AbsCpp.EIndex $1 $3 }
+      | Exp15 '[' Exp ']' { AbsCpp.EIndex $1 $3 }
       | Exp15 { $1 }
 Exp13 :: { Exp }
 Exp13 : '++' Exp14 { AbsCpp.EIncr $2 }
       | '--' Exp14 { AbsCpp.EDecr $2 }
       | '-' Exp14 { AbsCpp.ENeg $2 }
+      | '*' Exp14 { AbsCpp.EDeRef $2 }
+      | '!' Exp14 { AbsCpp.ENot $2 }
       | Exp14 { $1 }
 Exp12 :: { Exp }
 Exp12 : Exp12 '*' Exp13 { AbsCpp.EMul $1 $3 }
@@ -204,20 +214,16 @@ ListExp : {- empty -} { [] }
         | Exp ',' ListExp { (:) $1 $3 }
 ListId :: { [Id] }
 ListId : Id { (:[]) $1 } | Id ',' ListId { (:) $1 $3 }
+QId :: { QId }
+QId : Id { AbsCpp.QCon $1 }
 ListQId :: { [QId] }
 ListQId : QId { (:[]) $1 } | QId '::' ListQId { (:) $1 $3 }
-QIdElem :: { QIdElem }
-QIdElem : Id { AbsCpp.QIdElemId $1 }
-QId :: { QId }
-QId : ListQIdElem { AbsCpp.QIdElems $1 }
-ListQIdElem :: { [QIdElem] }
-ListQIdElem : QIdElem { (:[]) $1 }
-            | QIdElem '::' ListQIdElem { (:) $1 $3 }
 Type :: { Type }
 Type : 'bool' { AbsCpp.Tbool }
      | 'double' { AbsCpp.Tdouble }
      | 'int' { AbsCpp.Tint }
      | 'void' { AbsCpp.Tvoid }
+     | 'char' { AbsCpp.Tchar }
      | ListQId { AbsCpp.TQId $1 }
      | Ref { AbsCpp.TRef $1 }
 {
