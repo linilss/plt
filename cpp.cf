@@ -9,7 +9,8 @@ comment     "#" ;
 DFun.       Def     ::= Type Id "(" [Arg] ")" "{" [Stm] "}" ;
 DFunBody.   Def     ::= Type Id "(" [Arg] ")" ";" ;
 DUsing.     Def     ::= "using" [Id] ";" ;
-DStm.       Def     ::= Stm ;
+DInit.       Def     ::= Type [Var] ";" ;
+DTD.        Def     ::= "typedef" Type Id ";" ;
 
 separator   Arg "," ;
 terminator  Stm "" ;
@@ -20,15 +21,14 @@ ADeclInit.  Arg     ::= Type ;
 
 
 SExp.       Stm     ::= Exp ";" ;
-SDecl.      Stm     ::= Type Id ";" ;
 SInit.      Stm     ::= Type [Var] ";" ;
 SReturn.    Stm     ::= "return" Exp ";" ;
 SWhile.     Stm     ::= "while" "(" Exp ")" Stm ;
 SBlock.     Stm     ::= "{" [Stm] "}" ;
 SIf.        Stm     ::= "if" "(" Exp ")" Stm ;
 SIfElse.    Stm     ::= "if" "(" Exp ")" Stm "else" Stm ;
-SFor.       Stm     ::= "for" "(" Stm Exp ";" Exp  ")" Stm ;
-SDoWhile.   Stm     ::= "do" Stm "while" Stm ;
+SFor.       Stm     ::= "for" "(" Type [Var] ";" Exp ";" Exp  ")" Stm ;
+SDoWhile.   Stm     ::= "do" Stm "while" "(" Exp ")" ";"  ;
 
 STD.        Stm     ::= "typedef" Type Id ";" ;
 
@@ -44,8 +44,6 @@ EDouble.    Exp15   ::= Double ;
 EString.    Exp15   ::= [String] ;
 ETrue.      Exp15   ::= "true" ;
 EFalse.     Exp15   ::= "false" ;
-EId.        Exp15   ::= Id ;
-EApp.       Exp15   ::= Id "(" [Exp] ")" ;
 EChar.      Exp15   ::= Char ;
 
 EQCon.      Exp15   ::= [Id] ;
@@ -94,12 +92,14 @@ EThrow.     Exp1    ::= "throw" Exp ;
 
 coercions   Exp 15 ;
 separator   Exp "," ;
-Tbool.      Type ::= "bool" ;
-Tdouble.    Type ::= "double" ;
-Tint.       Type ::= "int" ;
-Tvoid.      Type ::= "void" ;
+Tbool.      PType ::= "bool" ;
+Tdouble.    PType ::= "double" ;
+Tint.       PType ::= "int" ;
+Tvoid.      PType ::= "void" ;
+TChar.      PType ::= "char" ; 
+TQCon.      PType ::= [Id] ;
+TPType.     RType ::= PType ;
+TRef.       RType ::= RType "&" ;
+TRType.     Type  ::= RType ;
+TConst.     Type  ::= "const" RType ;
 position    token Id (letter (letter | digit | '_')*) ; 
-TQCon.      Type ::= [Id] ;
-TRef.       Type ::= Type "&" ;
-TConst.     Type ::= "const" Type ;
-TChar.      Type ::= "char" ; 

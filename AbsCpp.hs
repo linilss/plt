@@ -7,82 +7,83 @@ module AbsCpp where
 
 
 
-newtype Ref = Ref ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 newtype Id = Id ((Int,Int),String) deriving (Eq, Ord, Show, Read)
 data Program = PDefs [Def]
   deriving (Eq, Ord, Show, Read)
 
 data Def
-    = DUsing [QId]
-    | DTD [QId] Id
-    | DFun Type Id [Arg] [Stm]
-    | DFunDecl Type Id [Arg]
+    = DFun Type Id [Arg] [Stm]
+    | DFunBody Type Id [Arg]
+    | DUsing [Id]
+    | DInit Type [Var]
+    | DTD Type Id
   deriving (Eq, Ord, Show, Read)
 
-data Arg = ACon Arg | ADecl Type Id | ANoId Type
+data Arg = ADecl Type Var | ADeclInit Type
   deriving (Eq, Ord, Show, Read)
 
 data Stm
     = SExp Exp
-    | STypedef Stm
-    | SCon Stm
-    | SDecl Type Id
-    | SDecls Type Id [Id]
-    | SInit Type Id Exp
+    | SInit Type [Var]
     | SReturn Exp
-    | SDoWhile Stm Exp
     | SWhile Exp Stm
-    | SFor Stm Stm Exp Stm
     | SBlock [Stm]
     | SIf Exp Stm
     | SIfElse Exp Stm Stm
-    | SUsing [QId]
-    | SThr Exp
+    | SFor Type [Var] Exp Exp Stm
+    | SDoWhile Stm Exp
+    | STD Type Id
+  deriving (Eq, Ord, Show, Read)
+
+data Var = VarDecl Id | VarInit Id Exp
   deriving (Eq, Ord, Show, Read)
 
 data Exp
     = EInt Integer
-    | EString String
-    | EStrings String Exp
     | EDouble Double
-    | EChar Char
+    | EString [String]
     | ETrue
     | EFalse
-    | EQId [QId]
-    | EDot Exp Exp
-    | EArrow Exp Exp
+    | EChar Char
+    | EQCon [Id]
     | ECall Exp [Exp]
+    | EStrDot Exp Exp
+    | EStrArr Exp Exp
+    | EIdx Exp Exp
     | EPIncr Exp
     | EPDecr Exp
-    | EIndex Exp Exp
     | EIncr Exp
     | EDecr Exp
     | ENeg Exp
-    | EDeRef Exp
-    | ENot Exp
-    | EMul Exp Exp
+    | EMul Exp
+    | ETimes Exp Exp
     | EDiv Exp Exp
     | EMod Exp Exp
-    | EAdd Exp Exp
-    | ESub Exp Exp
+    | EPlus Exp Exp
+    | EMinus Exp Exp
     | ERS Exp Exp
     | ELS Exp Exp
     | ELt Exp Exp
     | EGt Exp Exp
-    | ELEq Exp Exp
-    | EGEq Exp Exp
+    | ELtEq Exp Exp
+    | EGtWq Exp Exp
     | EEq Exp Exp
     | ENEq Exp Exp
     | EAnd Exp Exp
     | EOr Exp Exp
     | EAss Exp Exp
+    | EAssAdd Exp Exp
+    | EAssSub Exp Exp
     | ECond Exp Exp Exp
+    | EThrow Exp
   deriving (Eq, Ord, Show, Read)
 
-data QId = QCon Id
+data PType = Tbool | Tdouble | Tint | Tvoid | TChar | TQCon [Id]
   deriving (Eq, Ord, Show, Read)
 
-data Type
-    = Tbool | Tdouble | Tint | Tvoid | Tchar | TQId [QId] | TRef Ref
+data RType = TPType PType | TRef RType
+  deriving (Eq, Ord, Show, Read)
+
+data Type = TRType RType | TConst RType
   deriving (Eq, Ord, Show, Read)
 
