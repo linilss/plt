@@ -1,47 +1,25 @@
-JAVAC=javac
-JAVAC_FLAGS=-sourcepath .
-JAVA=java
-JAVA_FLAGS=
-CUP=java_cup.Main
-CUPFLAGS=-nopositions -expect 100
-JLEX=JLex.Main
-all: test
+# Makefile for PLT lab 2
 
-test: absyn cpp/Yylex.class cpp/PrettyPrinter.class cpp/Test.class cpp/ComposVisitor.class cpp/AbstractVisitor.class cpp/FoldVisitor.class cpp/AllVisitor.class cpp/parser.class cpp/sym.class cpp/Test.class
+lab2: lab2.hs TypeChecker.hs Interpreter.hs CPP/Test
+	ghc --make lab2.hs -o lab2
 
-.PHONY: absyn
+CPP/Test.hs CPP/Lex.x CPP/Layout.hs CPP/Par.y : CPP.cf
+	bnfc --haskell -d $<
 
-%.class: %.java
-	${JAVAC} ${JAVAC_FLAGS} $^
+CPP/Par.hs: CPP/Par.y
+	happy -gcai $<
 
-absyn: cpp/Absyn/Program.java cpp/Absyn/PDefs.java cpp/Absyn/ListDef.java cpp/Absyn/Def.java cpp/Absyn/DFun.java cpp/Absyn/DFunBody.java cpp/Absyn/DUsing.java cpp/Absyn/DInit.java cpp/Absyn/DTD.java cpp/Absyn/ListArg.java cpp/Absyn/ListStm.java cpp/Absyn/ListId.java cpp/Absyn/Arg.java cpp/Absyn/ADecl.java cpp/Absyn/ADeclInit.java cpp/Absyn/Stm.java cpp/Absyn/SExp.java cpp/Absyn/SInit.java cpp/Absyn/SReturn.java cpp/Absyn/SWhile.java cpp/Absyn/SBlock.java cpp/Absyn/SIf.java cpp/Absyn/SIfElse.java cpp/Absyn/SFor.java cpp/Absyn/SDoWhile.java cpp/Absyn/STD.java cpp/Absyn/ListString.java cpp/Absyn/ListVar.java cpp/Absyn/Var.java cpp/Absyn/VarDecl.java cpp/Absyn/VarInit.java cpp/Absyn/Exp.java cpp/Absyn/EInt.java cpp/Absyn/EDouble.java cpp/Absyn/EString.java cpp/Absyn/ETrue.java cpp/Absyn/EFalse.java cpp/Absyn/EApp.java cpp/Absyn/EChar.java cpp/Absyn/EQCon.java cpp/Absyn/ECall.java cpp/Absyn/EStrDot.java cpp/Absyn/EStrArr.java cpp/Absyn/EIdx.java cpp/Absyn/EPIncr.java cpp/Absyn/EPDecr.java cpp/Absyn/EIncr.java cpp/Absyn/EDecr.java cpp/Absyn/ENeg.java cpp/Absyn/EMul.java cpp/Absyn/ETimes.java cpp/Absyn/EDiv.java cpp/Absyn/EMod.java cpp/Absyn/EPlus.java cpp/Absyn/EMinus.java cpp/Absyn/ERS.java cpp/Absyn/ELS.java cpp/Absyn/ELt.java cpp/Absyn/EGt.java cpp/Absyn/ELtEq.java cpp/Absyn/EGtWq.java cpp/Absyn/EEq.java cpp/Absyn/ENEq.java cpp/Absyn/EAnd.java cpp/Absyn/EOr.java cpp/Absyn/EAss.java cpp/Absyn/EAssAdd.java cpp/Absyn/EAssSub.java cpp/Absyn/ECond.java cpp/Absyn/EThrow.java cpp/Absyn/ListExp.java cpp/Absyn/PType.java cpp/Absyn/Tbool.java cpp/Absyn/Tdouble.java cpp/Absyn/Tint.java cpp/Absyn/Tvoid.java cpp/Absyn/TChar.java cpp/Absyn/TQCon.java cpp/Absyn/RType.java cpp/Absyn/TPType.java cpp/Absyn/TRef.java cpp/Absyn/Type.java cpp/Absyn/TRType.java cpp/Absyn/TConst.java
-	${JAVAC} ${JAVAC_FLAGS} $^
+CPP/Lex.hs: CPP/Lex.x
+	alex -g $<
 
-cpp/Yylex.java: cpp/Yylex
-	${JAVA} ${JAVA_FLAGS} ${JLEX} cpp/Yylex
-
-cpp/sym.java cpp/parser.java: cpp/cpp.cup
-	${JAVA} ${JAVA_FLAGS} ${CUP} ${CUPFLAGS} cpp/cpp.cup
-	mv sym.java parser.java cpp/
-
-cpp/Yylex.class: cpp/Yylex.java cpp/sym.java
-
-cpp/sym.class: cpp/sym.java
-
-cpp/parser.class: cpp/parser.java cpp/sym.java
-
-cpp/PrettyPrinter.class: cpp/PrettyPrinter.java
+CPP/Test: CPP/Test.hs CPP/Par.hs CPP/Lex.hs
+	ghc --make $< -o $@
 
 clean:
-	rm -f cpp/Absyn/*.class cpp/*.class
+	-rm -f CPP/*.log CPP/*.aux CPP/*.hi CPP/*.o CPP/*.dvi
 
-distclean: vclean
+distclean: clean
+	-rm -f CPP/Doc.* CPP/Lex.* CPP/Par.* CPP/Layout.* CPP/Skel.* CPP/Print.* CPP/Test.* CPP/Abs.* CPP/Test CPP/ErrM.* CPP/SharedString.* CPP/ComposOp.* CPP/CPP.dtd CPP/XML.*
+	-rmdir -p CPP/
 
-vclean:
-	 rm -f cpp/Absyn/Program.java cpp/Absyn/PDefs.java cpp/Absyn/ListDef.java cpp/Absyn/Def.java cpp/Absyn/DFun.java cpp/Absyn/DFunBody.java cpp/Absyn/DUsing.java cpp/Absyn/DInit.java cpp/Absyn/DTD.java cpp/Absyn/ListArg.java cpp/Absyn/ListStm.java cpp/Absyn/ListId.java cpp/Absyn/Arg.java cpp/Absyn/ADecl.java cpp/Absyn/ADeclInit.java cpp/Absyn/Stm.java cpp/Absyn/SExp.java cpp/Absyn/SInit.java cpp/Absyn/SReturn.java cpp/Absyn/SWhile.java cpp/Absyn/SBlock.java cpp/Absyn/SIf.java cpp/Absyn/SIfElse.java cpp/Absyn/SFor.java cpp/Absyn/SDoWhile.java cpp/Absyn/STD.java cpp/Absyn/ListString.java cpp/Absyn/ListVar.java cpp/Absyn/Var.java cpp/Absyn/VarDecl.java cpp/Absyn/VarInit.java cpp/Absyn/Exp.java cpp/Absyn/EInt.java cpp/Absyn/EDouble.java cpp/Absyn/EString.java cpp/Absyn/ETrue.java cpp/Absyn/EFalse.java cpp/Absyn/EApp.java cpp/Absyn/EChar.java cpp/Absyn/EQCon.java cpp/Absyn/ECall.java cpp/Absyn/EStrDot.java cpp/Absyn/EStrArr.java cpp/Absyn/EIdx.java cpp/Absyn/EPIncr.java cpp/Absyn/EPDecr.java cpp/Absyn/EIncr.java cpp/Absyn/EDecr.java cpp/Absyn/ENeg.java cpp/Absyn/EMul.java cpp/Absyn/ETimes.java cpp/Absyn/EDiv.java cpp/Absyn/EMod.java cpp/Absyn/EPlus.java cpp/Absyn/EMinus.java cpp/Absyn/ERS.java cpp/Absyn/ELS.java cpp/Absyn/ELt.java cpp/Absyn/EGt.java cpp/Absyn/ELtEq.java cpp/Absyn/EGtWq.java cpp/Absyn/EEq.java cpp/Absyn/ENEq.java cpp/Absyn/EAnd.java cpp/Absyn/EOr.java cpp/Absyn/EAss.java cpp/Absyn/EAssAdd.java cpp/Absyn/EAssSub.java cpp/Absyn/ECond.java cpp/Absyn/EThrow.java cpp/Absyn/ListExp.java cpp/Absyn/PType.java cpp/Absyn/Tbool.java cpp/Absyn/Tdouble.java cpp/Absyn/Tint.java cpp/Absyn/Tvoid.java cpp/Absyn/TChar.java cpp/Absyn/TQCon.java cpp/Absyn/RType.java cpp/Absyn/TPType.java cpp/Absyn/TRef.java cpp/Absyn/Type.java cpp/Absyn/TRType.java cpp/Absyn/TConst.java cpp/Absyn/Program.class cpp/Absyn/PDefs.class cpp/Absyn/ListDef.class cpp/Absyn/Def.class cpp/Absyn/DFun.class cpp/Absyn/DFunBody.class cpp/Absyn/DUsing.class cpp/Absyn/DInit.class cpp/Absyn/DTD.class cpp/Absyn/ListArg.class cpp/Absyn/ListStm.class cpp/Absyn/ListId.class cpp/Absyn/Arg.class cpp/Absyn/ADecl.class cpp/Absyn/ADeclInit.class cpp/Absyn/Stm.class cpp/Absyn/SExp.class cpp/Absyn/SInit.class cpp/Absyn/SReturn.class cpp/Absyn/SWhile.class cpp/Absyn/SBlock.class cpp/Absyn/SIf.class cpp/Absyn/SIfElse.class cpp/Absyn/SFor.class cpp/Absyn/SDoWhile.class cpp/Absyn/STD.class cpp/Absyn/ListString.class cpp/Absyn/ListVar.class cpp/Absyn/Var.class cpp/Absyn/VarDecl.class cpp/Absyn/VarInit.class cpp/Absyn/Exp.class cpp/Absyn/EInt.class cpp/Absyn/EDouble.class cpp/Absyn/EString.class cpp/Absyn/ETrue.class cpp/Absyn/EFalse.class cpp/Absyn/EApp.class cpp/Absyn/EChar.class cpp/Absyn/EQCon.class cpp/Absyn/ECall.class cpp/Absyn/EStrDot.class cpp/Absyn/EStrArr.class cpp/Absyn/EIdx.class cpp/Absyn/EPIncr.class cpp/Absyn/EPDecr.class cpp/Absyn/EIncr.class cpp/Absyn/EDecr.class cpp/Absyn/ENeg.class cpp/Absyn/EMul.class cpp/Absyn/ETimes.class cpp/Absyn/EDiv.class cpp/Absyn/EMod.class cpp/Absyn/EPlus.class cpp/Absyn/EMinus.class cpp/Absyn/ERS.class cpp/Absyn/ELS.class cpp/Absyn/ELt.class cpp/Absyn/EGt.class cpp/Absyn/ELtEq.class cpp/Absyn/EGtWq.class cpp/Absyn/EEq.class cpp/Absyn/ENEq.class cpp/Absyn/EAnd.class cpp/Absyn/EOr.class cpp/Absyn/EAss.class cpp/Absyn/EAssAdd.class cpp/Absyn/EAssSub.class cpp/Absyn/ECond.class cpp/Absyn/EThrow.class cpp/Absyn/ListExp.class cpp/Absyn/PType.class cpp/Absyn/Tbool.class cpp/Absyn/Tdouble.class cpp/Absyn/Tint.class cpp/Absyn/Tvoid.class cpp/Absyn/TChar.class cpp/Absyn/TQCon.class cpp/Absyn/RType.class cpp/Absyn/TPType.class cpp/Absyn/TRef.class cpp/Absyn/Type.class cpp/Absyn/TRType.class cpp/Absyn/TConst.class
-	 rm -f cpp/Absyn/*.class
-	 rmdir cpp/Absyn/
-	 rm -f cpp/Yylex cpp/cpp.cup cpp/Yylex.java cpp/VisitSkel.java cpp/ComposVisitor.java cpp/AbstractVisitor.java cpp/FoldVisitor.java cpp/AllVisitor.java cpp/PrettyPrinter.java cpp/Skeleton.java cpp/Test.java cpp/sym.java cpp/parser.java cpp/*.class
-	rm -f Makefile
-	rmdir -p cpp/
-
+# EOF
