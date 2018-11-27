@@ -9,12 +9,19 @@ import CPP.Abs
 import CPP.Print
 import CPP.ErrM
 
+data TypeData = FunT {returnType :: Type, argTypes :: [Type]}
+              | VarT Type
 type Env = (Sig, [Context])         -- functions and context stack
 type Sig = Map Id ([Type], Type)    -- functions type signature
 type Context = Map Id Type          -- variables with their types
 
 typecheck :: Program -> Err ()
 typecheck (PDefs defs) = do
+  let builtIns = map (\(i, r, a) -> (Id i, FunT r a))
+              [("printInt", Type_void, [Type_int])
+              , ("printDouble", Type_void, [Type_double])
+              , ("readInt", Type_int, [])
+              , ("readDouble", Type_double, [])]
   return ()
 
 lookupVar :: Env -> Id -> Err Type
