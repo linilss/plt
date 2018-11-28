@@ -1,6 +1,17 @@
 # Makefile for PLT lab 2
 
-lab2: lab2.hs TypeChecker.hs Interpreter.hs CPP/Test
+.PHONY: test
+
+all : lab2 test
+
+test : test/const.cc
+# test/dont-bind-too-eagerly.cc # scopes-reuse-name.cc # while-scope.cc  # if-scope.cc  # while-block.cc
+	./lab2 $<
+
+testsuite : lab2
+	./run-testsuite.sh
+
+lab2 : lab2.hs TypeChecker.hs Interpreter.hs CPP/Test
 	ghc --make lab2.hs -o lab2
 
 CPP/Test.hs CPP/Lex.x CPP/Layout.hs CPP/Par.y : CPP.cf
@@ -14,6 +25,11 @@ CPP/Lex.hs: CPP/Lex.x
 
 CPP/Test: CPP/Test.hs CPP/Par.hs CPP/Lex.hs
 	ghc --make $< -o $@
+
+pack : lab2.tgz
+
+lab2.tgz : CPP.cf CPP/*.hs CPP/*.x CPP/*.y lab2.hs TypeChecker.hs Interpreter.hs
+	tar czf $@ $^
 
 clean:
 	-rm -f CPP/*.log CPP/*.aux CPP/*.hi CPP/*.o CPP/*.dvi
