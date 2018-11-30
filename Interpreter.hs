@@ -74,9 +74,13 @@ evalStm s0 = case s0 of
     evalExp e
     return ()
   SWhile e s -> do
-    evalExp e
-    evalStm s
-    return ()
+    v <- evalExp e
+    case v of
+      (VBool True) -> do
+        evalStm s
+        evalStm s0
+      (VBool False) -> return ()
+      _ -> error  $ "FUCK" 
   _ -> nyis
 
 -- | Evalute an expression to a value.
@@ -105,25 +109,23 @@ evalExp = \case
         d <- liftIO $ getLine
         return $ VDouble $ read d
       _ -> nyid
-  ELt   e1 e2   -> do
-    (v1,v2) <- vals e1 e2
-    case (v1,v2) of
-      (VInt i1, VInt i2) -> cmp (<) i1 i2
-      (VDouble d1, VDouble d2) -> cmp (<) d1 d2
-
-  --EGt   e1 e2   -> comparision (>)  e1 e2
-  --ELtEq e1 e2   -> comparision (<=) e1 e2
-  --EGtEq e1 e2   -> comparision (>=) e1 e2
-  --EEq   e1 e2   -> comparision (==) e1 e2
-  --ENEq  e1 e2   -> comparision (/=) e1 e2
+  ELt e1 e2 -> cmp (<) e1 e2
+  EGt e1 e2 -> cmp (>) e1 e2
+  ELtEq e1 e2   -> cmp (<=) e1 e2
+  EGtEq e1 e2   -> cmp (>=) e1 e2
+  EEq   e1 e2   -> cmp (==) e1 e2
+  ENEq  e1 e2   -> cmp (/=) e1 e2
+  EPostIncr i -> do
+    val <- lookupVar i
+    let val' = case val of
+          VInt i -> VInt $ i+1
+          VDouble d -> VDouble $ d+1
+    updateVar i val'
+    return val'
   e -> nyi
   where
-    vals e1 e2 = do
-      v1 <- evalExp e1
-      v2 <- evalExp e2
-      return (v1,v2)
-    cmp op x y = do
-      if x `op` y
+    cmp op e1 e2 = do
+      if e1 `op` e2
         then return (VBool True)
         else return (VBool False)
 
@@ -132,7 +134,7 @@ nyi = error "NOT YET INTERPRETED"
 nyid = error "NOT YET FUNCTION INTR"
 nyis = error "NOT YET STM INTR"
 
-  
+
 -- * Variable handling
 
 -- | The initial environment has one empty block.
@@ -146,9 +148,15 @@ newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> Map.insert x v b : bs
 
+updateVar :: Id -> Val -> Eval ()
+updateVar i v = do
+  modify $ \case
+    b:bs -> Map.adjust (\x -> v) i b : bs
+
 lookupVar :: Id -> Eval Val
 lookupVar x = do
   b <- get
   case catMaybes $ map (Map.lookup x) b of
     [] -> error "variable not declared in scope"
     (t:ts) -> return t
+

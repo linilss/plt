@@ -1,5 +1,9 @@
   int main ()
   {
     int i = 1;
-    while (i < 10) i++ ;
+    int j = 2;
+    i>j;
+    i++;
+    i++;
+    printInt(i);
   }
