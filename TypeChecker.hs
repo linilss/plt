@@ -106,6 +106,8 @@ checkStm = \case
     checkExp e Type_bool
     checkStm s
   SBlock ss -> do
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     mapM_ checkStm ss
   SIfElse e s1 s2 -> do
     checkExp e Type_bool
@@ -133,17 +135,20 @@ inferExp = \case
         return t
   EPostIncr i -> lookupVar i
   EPostDecr i -> lookupVar i
-  EPreIncr i -> lookupVar i
-  EPreDecr i -> lookupVar i
-  ETimes e1 e2 -> multTypes e1 e2
-  EDiv e1 e2 -> multTypes e1 e2
-  EPlus e1 e2 -> multTypes e1 e2
-  EMinus e1 e2 -> multTypes e1 e2
-  ELt e1 e2 -> similarType e1 e2
-  EGt e1 e2 -> similarType e1 e2
-  ELtEq e1 e2 -> similarType e1 e2
-  EGtEq e1 e2 -> similarType e1 e2
-  EEq e1 e2 -> similarType e1 e2
+  EPreIncr i  -> lookupVar i
+  EPreDecr i  -> lookupVar i
+  ETimes e1 e2  -> multTypes e1 e2
+  EDiv e1 e2    -> multTypes e1 e2
+  EPlus e1 e2   -> multTypes e1 e2
+  EMinus e1 e2  -> multTypes e1 e2
+  ELt e1 e2   -> compareSimilarType e1 e2
+  EGt e1 e2   -> compareSimilarType e1 e2
+  ELtEq e1 e2 -> compareSimilarType e1 e2
+  EGtEq e1 e2 -> compareSimilarType e1 e2
+  EEq e1 e2   -> compareSimilarType e1 e2
+  ENEq e1 e2  -> compareSimilarType e1 e2
+  EAnd e1 e2  -> compareSimilarType e1 e2
+  EOr e1 e2   -> compareSimilarType e1 e2
   e -> nyi
   where
     multTypes e1 e2 = do
@@ -153,12 +158,12 @@ inferExp = \case
           checkExp e2 t1
           return t1
         else error $ "wrong types in expression"
-    similarType e1 e2 = do
+    compareSimilarType e1 e2 = do
       t1 <- inferExp e1
       t2 <- inferExp e2
       if (t1 == t2)
         then return Type_bool
-      else error $ "different types in expression"
+        else error $ "different types in expression"
 
 -- | Check an expression against a given type.
 checkExp :: Exp -> Type -> Check ()
@@ -177,7 +182,8 @@ nyis = error "STM NOT YET IMPLEMENTED"
 
 -- | Update the typing context.
 modifyCxt :: (Cxt -> Cxt) -> Check ()
-modifyCxt f = modify $ \ (St bs t) -> St (f bs) t
+modifyCxt f = do
+  modify $ \ (St bs t) -> St (f bs) t
 
 -- | Add a new binding and make sure it is unique in the top context block.
 newVar :: Id -> Type -> Check ()

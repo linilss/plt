@@ -1,8 +1,5 @@
-    int scope_violation (int x) {
-      int x = 1;
-      {
-        int y = 2;
-        int y;
-      }
-      return x;
-    }
+  int main ()
+  {
+    int i = readInt() ;
+    printInt(1);
+  }
