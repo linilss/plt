@@ -105,24 +105,19 @@ evalExp = \case
         d <- liftIO $ getLine
         return $ VDouble $ read d
       _ -> nyid
-  ELt   e1 e2   -> do
-    (v1,v2) <- vals e1 e2
-    case (v1,v2) of
-      (VInt i1, VInt i2) -> cmp (<) i1 i2
-      (VDouble d1, VDouble d2) -> cmp (<) d1 d2
 
-  --EGt   e1 e2   -> comparision (>)  e1 e2
+ --EGt   e1 e2   -> comparision (>)  e1 e2
   --ELtEq e1 e2   -> comparision (<=) e1 e2
   --EGtEq e1 e2   -> comparision (>=) e1 e2
   --EEq   e1 e2   -> comparision (==) e1 e2
   --ENEq  e1 e2   -> comparision (/=) e1 e2
+
+  ELt e1 e2 -> do 
+    comp (<) e1 e2 
+
   e -> nyi
   where
-    vals e1 e2 = do
-      v1 <- evalExp e1
-      v2 <- evalExp e2
-      return (v1,v2)
-    cmp op x y = do
+    comp op x y = do
       if x `op` y
         then return (VBool True)
         else return (VBool False)
