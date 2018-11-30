@@ -1,5 +1,5 @@
   int main ()
   {
-    int i = readInt() ;
-    printInt(1);
+    int i = 1;
+    while (i < 10) i++ ;
   }

@@ -12,6 +12,7 @@ import Control.Monad.State
 
 import Data.Functor
 import Data.Maybe
+import Data.Typeable
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -72,6 +73,10 @@ evalStm s0 = case s0 of
   SExp e -> do
     evalExp e
     return ()
+  SWhile e s -> do
+    evalExp e
+    evalStm s
+    return ()
   _ -> nyis
 
 -- | Evalute an expression to a value.
@@ -79,7 +84,7 @@ evalStm s0 = case s0 of
 evalExp :: Exp -> Eval Val
 evalExp = \case
   EInt i -> return $ VInt i
-  --EId x      -> return $ lookupVar x
+  EId x      -> lookupVar x
   EDouble d  -> return $ VDouble d
   ETrue      -> return $ VBool True
   EFalse -> return $ VBool False
@@ -100,7 +105,27 @@ evalExp = \case
         d <- liftIO $ getLine
         return $ VDouble $ read d
       _ -> nyid
+  ELt   e1 e2   -> do
+    (v1,v2) <- vals e1 e2
+    case (v1,v2) of
+      (VInt i1, VInt i2) -> cmp (<) i1 i2
+      (VDouble d1, VDouble d2) -> cmp (<) d1 d2
+
+  --EGt   e1 e2   -> comparision (>)  e1 e2
+  --ELtEq e1 e2   -> comparision (<=) e1 e2
+  --EGtEq e1 e2   -> comparision (>=) e1 e2
+  --EEq   e1 e2   -> comparision (==) e1 e2
+  --ENEq  e1 e2   -> comparision (/=) e1 e2
   e -> nyi
+  where
+    vals e1 e2 = do
+      v1 <- evalExp e1
+      v2 <- evalExp e2
+      return (v1,v2)
+    cmp op x y = do
+      if x `op` y
+        then return (VBool True)
+        else return (VBool False)
 
 shit = error "omg"
 nyi = error "NOT YET INTERPRETED"
@@ -121,4 +146,9 @@ newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> Map.insert x v b : bs
 
--- lookupVar :: Id -> Val
+lookupVar :: Id -> Eval Val
+lookupVar x = do
+  b <- get
+  case catMaybes $ map (Map.lookup x) b of
+    [] -> error "variable not declared in scope"
+    (t:ts) -> return t
