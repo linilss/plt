@@ -182,7 +182,8 @@ nyis = error "STM NOT YET IMPLEMENTED"
 
 -- | Update the typing context.
 modifyCxt :: (Cxt -> Cxt) -> Check ()
-modifyCxt f = modify $ \ (St bs t) -> St (f bs) t
+modifyCxt f = do
+  modify $ \ (St bs t) -> St (f bs) t
 
 -- | Add a new binding and make sure it is unique in the top context block.
 newVar :: Id -> Type -> Check ()

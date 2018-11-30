@@ -69,13 +69,20 @@ evalStm s0 = case s0 of
   SInit t x e -> do
     v <- evalExp e
     newVar x v
-  _ -> nyi
+  SExp e -> do
+    evalExp e
+    return ()
+  _ -> nyis
 
 -- | Evalute an expression to a value.
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
   EInt i -> return $ VInt i
+  --EId x      -> return $ lookupVar x
+  EDouble d  -> return $ VDouble d
+  ETrue      -> return $ VBool True
+  EFalse -> return $ VBool False
   EApp f es -> do
     case f of
       (Id "printInt") -> do
@@ -87,16 +94,18 @@ evalExp = \case
         liftIO $ putStrLn $ show i
         return VVoid
       (Id "readInt") -> do
-        i <- liftIO $ getLine 
+        i <- liftIO $ getLine
         return (VInt (read i))
       (Id "readDouble") -> do
-        VDouble i <- evalExp $ head es
-        liftIO $ putStrLn $ show i
-        return VVoid
-      _ -> nyi
+        d <- liftIO $ getLine
+        return $ VDouble $ read d
+      _ -> nyid
   e -> nyi
 
+shit = error "omg"
 nyi = error "NOT YET INTERPRETED"
+nyid = error "NOT YET FUNCTION INTR"
+nyis = error "NOT YET STM INTR"
 
   
 -- * Variable handling
@@ -111,3 +120,5 @@ emptyEnv = [Map.empty]
 newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> Map.insert x v b : bs
+
+-- lookupVar :: Id -> Val

@@ -1,12 +1,5 @@
-int main () {
-  int i = 6 ;
+  int main ()
   {
-      int i = 2 ;
-      {
-        int i = 3;
-        {
-        }
-      }
-      i++ ;
-    }
-}
+    int i = readInt() ;
+    printInt(1);
+  }
