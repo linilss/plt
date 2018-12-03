@@ -2,7 +2,10 @@
   {
     int i = 1;
     printInt(i);
-    while(i<10) {
+    bool t = true; 
+    bool f = false; 
+
+    while(t || f) {
       i++;
       printInt(i);
     }

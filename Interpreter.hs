@@ -110,6 +110,24 @@ evalExp = \case
         d <- liftIO $ getLine
         return $ VDouble $ read d
       _ -> nyid
+  
+  EOr e1 e2 -> do
+    v1 <- evalExp e1
+    v2 <- evalExp e2
+    case v1 of 
+      (VBool True) -> return (VBool True)
+      (VBool False) -> case v2 of
+                        (VBool True) -> return (VBool True)
+                        (VBool False) -> return (VBool True) 
+
+  EAnd e1 e2 -> do 
+    v1 <- evalExp e1
+    v2 <- evalExp e2
+    case v1 of 
+      (VBool True) -> case v2 of 
+                        (VBool True) -> return (VBool True)
+                        _            -> return (VBool False)
+      _            -> return (VBool False)
 
   ELt e1 e2 -> cmp (<) e1 e2
   EGt e1 e2 -> cmp (>) e1 e2
