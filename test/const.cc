@@ -1,9 +1,10 @@
   int main ()
   {
     int i = 1;
-    int j = 2;
-    i>j;
-    i++;
-    i++;
+    printInt(i);
+    (i < 10);
+    (10 >= 1);
+    (10 == 10);
+    (11 != 10);
     printInt(i);
   }
