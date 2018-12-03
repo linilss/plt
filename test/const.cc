@@ -2,7 +2,9 @@
   {
     int i = 1;
     printInt(i);
-    i++;
-    (1 < 2);
+    while(i<10) {
+      i++;
+      printInt(i);
+    }
     printInt(i);
   }
