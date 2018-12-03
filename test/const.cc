@@ -1,10 +1,4 @@
-  int main ()
-  {
-    int i = 1;
-    printInt(i);
-    while(i<10) {
-      i++;
-      printInt(i);
-    }
-    printInt(i);
-  }
+int main () {
+	if (2 < 1) { } else { }
+	return 0;
+}

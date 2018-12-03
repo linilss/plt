@@ -60,20 +60,37 @@ typecheck prg@(PDefs defs) = do
 
   -- Prepare the initial state.
   let st = undefined -- St [] $ error "no return type set"
+      dups = dupDefs sig []
   -- Run the type checker.
-  case runExcept (evalStateT (runReaderT (checkProgram prg) $ Map.fromList sig) st) of
+  case runExcept (evalStateT (runReaderT (checkProgram prg dups) $ Map.fromList sig) st) of
     Left s   -> Bad s
     Right () -> return ()
 
+dupDefs :: [(Id, FunType)] ->[Id] -> Bool
+dupDefs ((i,f):[]) is = True
+dupDefs ((i,f):sigs) [] = True && dupDefs sigs (i:[])
+dupDefs ((i,f):sigs) is = dupDefs' i is && dupDefs sigs (i:is)
+
+dupDefs' :: Id -> [Id] -> Bool
+dupDefs' s ss = not (s `elem` ss)
+
+
 -- | Check program: check definitions and main function.
-checkProgram :: Program -> Check ()
-checkProgram (PDefs defs) = do
+checkProgram :: Program -> Bool -> Check ()
+checkProgram (PDefs defs) dups = do
+  unless (dups) $ throwError "dup"
+  unless (length defs > 0) $ throwError "Empty program not allowed"
   mapM_ checkDef defs
   -- TODO: checkMain
 
 -- | Check a single function definition.
 checkDef :: Def -> Check ()
 checkDef (DFun t f args ss) = do
+  let mainArgs = case f of
+        (Id "main") -> length args
+        _ -> 0
+  unless (mainArgs == 0) $ throwError "No args allowed in main"
+  unless (length ss > 0) $ throwError "No function body"
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.
@@ -101,7 +118,7 @@ checkStm = \case
     ret <- gets stRet
     if (t == ret)
       then return ()
-      else yo
+      else throwError $ "Wrong return type"
   SWhile e s -> do
     checkExp e Type_bool
     checkStm s
@@ -109,11 +126,14 @@ checkStm = \case
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
     mapM_ checkStm ss
+    modifyCxt $ const cxt
   SIfElse e s1 s2 -> do
     checkExp e Type_bool
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     checkStm s1
     checkStm s2
-  s -> nyis
+  s -> throwError $ "Bad statement"
 
 -- | Infer the type of an expression.
 inferExp :: Exp -> Check Type
@@ -133,23 +153,31 @@ inferExp = \case
           throwError $ "wrong number of arguments"
         zipWithM_ checkExp es ts
         return t
-  EPostIncr i -> lookupVar i
-  EPostDecr i -> lookupVar i
-  EPreIncr i  -> lookupVar i
-  EPreDecr i  -> lookupVar i
+  EPostIncr i -> do
+    t <- lookupVar i
+    numType t
+  EPostDecr i -> do
+    t <- lookupVar i
+    numType t
+  EPreIncr i  -> do
+    t <- lookupVar i
+    numType t
+  EPreDecr i  -> do
+    t <- lookupVar i
+    numType t
   ETimes e1 e2  -> multTypes e1 e2
   EDiv e1 e2    -> multTypes e1 e2
   EPlus e1 e2   -> multTypes e1 e2
   EMinus e1 e2  -> multTypes e1 e2
-  ELt e1 e2   -> compareSimilarType e1 e2
-  EGt e1 e2   -> compareSimilarType e1 e2
-  ELtEq e1 e2 -> compareSimilarType e1 e2
-  EGtEq e1 e2 -> compareSimilarType e1 e2
-  EEq e1 e2   -> compareSimilarType e1 e2
-  ENEq e1 e2  -> compareSimilarType e1 e2
+  ELt e1 e2   -> compareSimilarNumType e1 e2
+  EGt e1 e2   -> compareSimilarNumType e1 e2
+  ELtEq e1 e2 -> compareSimilarNumType e1 e2
+  EGtEq e1 e2 -> compareSimilarNumType e1 e2
+  EEq e1 e2   -> compareSimilarNumType e1 e2
+  ENEq e1 e2  -> compareSimilarNumType e1 e2
   EAnd e1 e2  -> compareSimilarType e1 e2
   EOr e1 e2   -> compareSimilarType e1 e2
-  e -> nyi
+  e -> throwError $ "Bad expression"
   where
     multTypes e1 e2 = do
       t1 <- inferExp e1
@@ -157,13 +185,23 @@ inferExp = \case
         then do
           checkExp e2 t1
           return t1
-        else error $ "wrong types in expression"
+        else throwError $ "wrong types in expression"
+    numType t = do
+      if elem t [Type_int, Type_double]
+        then return t
+        else throwError $ "wrong type in exp"
     compareSimilarType e1 e2 = do
       t1 <- inferExp e1
       t2 <- inferExp e2
       if (t1 == t2)
         then return Type_bool
-        else error $ "different types in expression"
+        else throwError $ "different types in expression"
+    compareSimilarNumType e1 e2 = do
+      t1 <- inferExp e1
+      t2 <- inferExp e2
+      if (t1 == t2 && t1 `elem` [Type_int, Type_double] && t2 `elem` [Type_int, Type_double])
+        then return Type_bool
+        else throwError $ "different or wrong types in expression"
 
 -- | Check an expression against a given type.
 checkExp :: Exp -> Type -> Check ()
@@ -171,12 +209,6 @@ checkExp e t = do
   t' <- inferExp e
   unless (t == t') $ throwError $
     "expected type " ++ printTree t ++ ", but inferred type is " ++ printTree t'
-
-yo = error "hello every1"
-ok = error "A-OK"
-ok2 = error "B-OK!!!"
-nyi = error "NOT YET IMPLEMENTED"
-nyis = error "STM NOT YET IMPLEMENTED"
 
 -- * Variable handling
 
@@ -194,6 +226,13 @@ newVar x t = do
   let (found, b') = Map.insertLookupWithKey (\ _ t _ -> t) x t b
   unless (isNothing found) $ throwError $ "duplicate variable binding " ++ printTree x
   modifyCxt $ const (b':bs)
+
+--newFun :: Id -> Type -> Check ()
+--newFun x t = do
+--  (b:bs) <- gets stCxt
+--  let (found, b') = Map.insertLookupWithKey (\ _ t _ -> t) x t b
+--  unless (isNothing found) $ throwError $ "duplicate func binding " ++ printTree x
+--  modifyCxt $ const (b':bs)
 
 lookupVar :: Id -> Check Type
 lookupVar i = do

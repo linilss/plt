@@ -82,8 +82,18 @@ evalStm s0 = case s0 of
       (VBool False) -> return ()
       _ -> error  $ "FUCK"
   SBlock ss -> evalStms ss
+  SIfElse e s1 s2 -> do
+    v <- evalExp e
+    cxt <- get
+    let x = newBlock:cxt
+    case v of
+      (VBool True) -> evalStm s1
+      _ -> evalStm s2
+  SReturn _ -> return ()
   _ -> nyis
 
+newBlock :: Block
+newBlock = Map.empty
 -- | Evalute an expression to a value.
 
 evalExp :: Exp -> Eval Val
@@ -123,6 +133,22 @@ evalExp = \case
           VDouble d -> VDouble $ d+1
     updateVar i val'
     return val'
+  EOr e1 e2 -> do
+      v1 <- evalExp e1
+      v2 <- evalExp e2
+      case v1 of
+        (VBool True) -> return (VBool True)
+        (VBool False) -> case v2 of
+                          (VBool True) -> return (VBool True)
+                          (VBool False) -> return (VBool True)
+  EAnd e1 e2 -> do
+      v1 <- evalExp e1
+      v2 <- evalExp e2
+      case v1 of
+        (VBool True) -> case v2 of
+                          (VBool True) -> return (VBool True)
+                          _            -> return (VBool False)
+        _ -> return (VBool False)
   e -> nyi
   where
     cmp op e1 e2 = do
@@ -149,6 +175,11 @@ emptyEnv = [Map.empty]
 
 -- | Insert binding into top environment block.
 
+--newBlock :: Env
+--newBlock = do
+--  cxt <- get
+--  put [Map.empty]:cxt
+
 newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> Map.insert x v b : bs
@@ -156,7 +187,7 @@ newVar x v = modify $ \case
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
-    b:bs -> Map.adjust (\x -> v) i b : bs
+    bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
 lookupVar :: Id -> Eval Val
 lookupVar x = do
