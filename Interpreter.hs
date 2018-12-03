@@ -74,9 +74,13 @@ evalStm s0 = case s0 of
     evalExp e
     return ()
   SWhile e s -> do
-    evalExp e
-    evalStm s
-    return ()
+    v <- evalExp e
+    case v of
+      (VBool True) -> do
+        evalStm s
+        evalStm s0
+      (VBool False) -> return ()
+      _ -> error  $ "FUCK" 
   _ -> nyis
 
 -- | Evalute an expression to a value.
@@ -106,19 +110,23 @@ evalExp = \case
         return $ VDouble $ read d
       _ -> nyid
 
- --EGt   e1 e2   -> comparision (>)  e1 e2
-  --ELtEq e1 e2   -> comparision (<=) e1 e2
-  --EGtEq e1 e2   -> comparision (>=) e1 e2
-  --EEq   e1 e2   -> comparision (==) e1 e2
-  --ENEq  e1 e2   -> comparision (/=) e1 e2
-
-  ELt e1 e2 -> do 
-    comp (<) e1 e2 
-
+  ELt e1 e2 -> cmp (<) e1 e2
+  EGt e1 e2 -> cmp (>) e1 e2
+  ELtEq e1 e2   -> cmp (<=) e1 e2
+  EGtEq e1 e2   -> cmp (>=) e1 e2
+  EEq   e1 e2   -> cmp (==) e1 e2
+  ENEq  e1 e2   -> cmp (/=) e1 e2
+  EPostIncr i -> do
+    val <- lookupVar i
+    let val' = case val of
+          VInt i -> VInt $ i+1
+          VDouble d -> VDouble $ d+1
+    updateVar i val'
+    return val'
   e -> nyi
   where
-    comp op x y = do
-      if x `op` y
+    cmp op e1 e2 = do
+      if e1 `op` e2
         then return (VBool True)
         else return (VBool False)
 
@@ -127,7 +135,7 @@ nyi = error "NOT YET INTERPRETED"
 nyid = error "NOT YET FUNCTION INTR"
 nyis = error "NOT YET STM INTR"
 
-  
+
 -- * Variable handling
 
 -- | The initial environment has one empty block.
@@ -141,9 +149,15 @@ newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> Map.insert x v b : bs
 
+updateVar :: Id -> Val -> Eval ()
+updateVar i v = do
+  modify $ \case
+    b:bs -> Map.adjust (\x -> v) i b : bs
+
 lookupVar :: Id -> Eval Val
 lookupVar x = do
   b <- get
   case catMaybes $ map (Map.lookup x) b of
     [] -> error "variable not declared in scope"
     (t:ts) -> return t
+
