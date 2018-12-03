@@ -1,13 +1,9 @@
-  int main ()
-  {
-    int i = 1;
-    printInt(i);
-    bool t = true; 
-    bool f = false; 
+int main() {
+  int x = 78;
 
-    while(t || f) {
-      i++;
-      printInt(i);
-    }
-    printInt(i);
+  while (x > 76) {
+    x--;
+    printInt(x);
+   	int i = 7;
   }
+}
