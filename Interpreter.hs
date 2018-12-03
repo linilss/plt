@@ -45,7 +45,7 @@ data Val
   | VInt    Integer
   | VDouble Double
   | VVoid           -- ^ Also used for uninitialized variable.
-
+  deriving(Show,Eq,Ord)
 -- | Entry point.
 
 interpret :: Program -> IO ()
@@ -80,7 +80,8 @@ evalStm s0 = case s0 of
         evalStm s
         evalStm s0
       (VBool False) -> return ()
-      _ -> error  $ "FUCK" 
+      _ -> error  $ "FUCK"
+  SBlock ss -> evalStms ss
   _ -> nyis
 
 -- | Evalute an expression to a value.
@@ -126,11 +127,15 @@ evalExp = \case
   e -> nyi
   where
     cmp op e1 e2 = do
-      if e1 `op` e2
-        then return (VBool True)
-        else return (VBool False)
+      v1 <- evalExp e1
+      v2 <- evalExp e2
+      return (VBool $ v1 `op` v2)
 
-shit = error "omg"
+
+shit = error "shit"
+fuck = error "fuck"
+piss = error "piss"
+omg = error "omg"
 nyi = error "NOT YET INTERPRETED"
 nyid = error "NOT YET FUNCTION INTR"
 nyis = error "NOT YET STM INTR"
