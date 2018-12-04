@@ -89,8 +89,11 @@ checkDef (DFun t f args ss) = do
   let mainArgs = case f of
         (Id "main") -> length args
         _ -> 0
+      mainBody = case f of
+        (Id "main") -> length ss
+        _ -> 1
   unless (mainArgs == 0) $ throwError "No args allowed in main"
-  unless (length ss > 0) $ throwError "No function body"
+  unless (mainBody > 0) $ throwError "No function body"
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.
@@ -182,7 +185,13 @@ inferExp = \case
   ENEq e1 e2  -> compareSimilarNumType e1 e2
   EAnd e1 e2  -> compareSimilarType e1 e2
   EOr e1 e2   -> compareSimilarType e1 e2
-  e -> throwError $ "Bad expression"
+  EAss i e    -> do 
+    t1 <- lookupVar i
+    t2 <- inferExp e
+    if t1 == t2 
+      then return t1 
+      else throwError $ show i ++ " not declared as " ++ show t2
+  --e -> throwError $ "Bad expression"
   where
     multTypes e1 e2 = do
       t1 <- inferExp e1

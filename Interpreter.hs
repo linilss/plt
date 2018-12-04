@@ -70,7 +70,7 @@ evalStm s0 = case s0 of
 
   SDecls t ids -> do addDecls ids
   SReturn e ->  do
-    evalExp e
+    v1 <- evalExp e
     return()
   SInit t x e -> do
     v <- evalExp e
@@ -115,6 +115,8 @@ evalStm s0 = case s0 of
       let oldEnv = drop 1 env
       put oldEnv
 
+-- evalExps :: [Exp] -> Eval Val
+-- evalExps = mapM_ evalExp
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -139,6 +141,22 @@ evalExp = \case
       (Id "readDouble") -> do
         d <- liftIO $ getLine
         return $ VDouble $ read d
+      (Id i) -> do
+        sig <- ask
+        let FunDef ids stms = lookupDef f sig
+        let ess = es
+        evalExps es
+        evalStms stms
+        return VVoid
+      _ -> do error $ "EApp not implemented for other than basic funcktions"
+          --sig <- ask
+          --let a b =  map evalExp es
+      where
+        evalExps (e:[]) = do
+          evalExp e
+        evalExps (e:es) = do
+          v <- evalExp e
+          evalExps es
 
   EOr e1 e2 -> do
     v1 <- evalExp e1
