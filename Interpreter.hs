@@ -273,6 +273,12 @@ updateVar i v = do
   modify $ \case
     bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
+lookupDef :: Id -> Sig -> FunDef
+lookupDef id sig = do
+  case Map.lookup id sig of
+    Nothing -> error $ "undefined function " ++ printTree id
+    Just d -> d
+    
 lookupVar :: Id -> Eval Val
 lookupVar x = do
   b <- get
