@@ -1,9 +1,8 @@
-int main() {
-  int x = 78;
+int main () {
+	int x0 = 0 ;
+	if (false) 0;
+	else bool x0 = true ;
+	int x1 = x0 -- ;
 
-  while (x > 76) {
-    x = 30;
-    printInt(x);
-   	int i = 7;
-  }
+	return 0;
 }

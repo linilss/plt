@@ -60,7 +60,7 @@ interpret (PDefs defs) = do
 
 -- | Execute statements from left to right.
 
-evalStms :: [Stm] -> Eval ()
+evalStms :: [Stm] -> Eval ()  
 evalStms = mapM_ evalStm
 
 -- | Execute a single statement.
@@ -69,7 +69,7 @@ evalStm :: Stm -> Eval ()
 evalStm s0 = case s0 of
 
   SDecls t ids -> do addDecls ids
-  SReturn e ->  do 
+  SReturn e ->  do
     evalExp e
     return()
   SInit t x e -> do
@@ -85,6 +85,7 @@ evalStm s0 = case s0 of
         evalStm s
         evalStm s0
       (VBool False) -> do 
+        exitBlock
         return ()
   SBlock ss -> do
     enterNewBlock
@@ -101,8 +102,8 @@ evalStm s0 = case s0 of
               evalStm s2
               exitBlock
 
-  where 
-    enterNewBlock = do 
+  where
+    enterNewBlock = do
       env <- get
       let newEnv = newBlock : env
       put newEnv
@@ -112,7 +113,6 @@ evalStm s0 = case s0 of
       let oldEnv = drop 1 env
       put oldEnv
 
--- | Evalute an expression to a value.
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -145,17 +145,17 @@ evalExp = \case
   EOr e1 e2 -> do
     v1 <- evalExp e1
     v2 <- evalExp e2
-    case v1 of 
+    case v1 of
       (VBool True) -> return (VBool True)
       (VBool False) -> case v2 of
                         (VBool True)  -> return (VBool True)
-                        (VBool False) -> return (VBool True) 
+                        (VBool False) -> return (VBool True)
 
-  EAnd e1 e2 -> do 
+  EAnd e1 e2 -> do
     v1 <- evalExp e1
     v2 <- evalExp e2
-    case v1 of 
-      (VBool True) -> case v2 of 
+    case v1 of
+      (VBool True) -> case v2 of
                         (VBool True) -> return (VBool True)
                         _            -> return (VBool False)
       _            -> return (VBool False)
@@ -166,40 +166,60 @@ evalExp = \case
   EGtEq e1 e2   -> cmp (>=) e1 e2
   EEq   e1 e2   -> cmp (==) e1 e2
   ENEq  e1 e2   -> cmp (/=) e1 e2
-  EPostIncr i   -> do incOp i
-  EPostDecr i   -> do decOp i
-  EPreIncr i    -> do incOp i
-  EPreDecr i    -> do decOp i
-  ETimes e1 e2  -> do  
+  EPostIncr id   -> do 
+      val <- lookupVar id
+      updateVar id (incr val)
+      return $ case val of 
+        (VInt i) -> (VInt i)
+        (VDouble d) -> (VDouble d)
+  EPreIncr id    -> do 
+      val <- lookupVar id
+      updateVar id (incr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i+1))
+        (VDouble d) -> (VDouble (d+1))     
+  EPostDecr id -> do
+      val <- lookupVar id
+      updateVar id (decr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i))
+        (VDouble d) -> (VDouble (d))
+  EPreDecr id -> do 
+      val <- lookupVar id
+      updateVar id (decr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i-1))
+        (VDouble d) -> (VDouble (d-1))
+  ETimes e1 e2  -> do
       (v1,v2) <- evalExps e1 e2
-      case (v1,v2) of 
+      case (v1,v2) of
         (VInt i1, VInt i2)        -> return (VInt (i1 * i2))
         (VDouble d1, VDouble d2)  -> return (VDouble (d1 * d2))
 
-  EDiv e1 e2  -> do  
+  EDiv e1 e2  -> do
       (v1,v2) <- evalExps e1 e2
-      case (v1,v2) of 
+      case (v1,v2) of
         (VInt i1, VInt i2)        -> return (VInt (div i1 i2))
         (VDouble d1, VDouble d2)  -> return (VDouble (d1 / d2))
 
-  EPlus e1 e2  -> do  
+  EPlus e1 e2  -> do
       (v1,v2) <- evalExps e1 e2
-      case (v1,v2) of 
+      case (v1,v2) of
         (VInt i1, VInt i2)        -> return (VInt (i1 + i2))
         (VDouble d1, VDouble d2)  -> return (VDouble (d1 + d2))
 
-  EMinus e1 e2  -> do  
+  EMinus e1 e2  -> do
       (v1,v2) <- evalExps e1 e2
-      case (v1,v2) of 
+      case (v1,v2) of
         (VInt i1, VInt i2)        -> return (VInt (i1 - i2))
         (VDouble d1, VDouble d2)  -> return (VDouble (d1 - d2))
 
-  EAss i e -> do 
+  EAss i e -> do
       v <- evalExp e
       updateVar i v
       return v
 
-  where 
+  where
     evalExps e1 e2 = do
       v1 <- evalExp e1
       v2 <- evalExp e2
@@ -210,29 +230,13 @@ evalExp = \case
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
 
-    incOp i = do 
-      val <- lookupVar i
-      let val' = case val of
-            VInt i -> VInt $ i+1
-            VDouble d -> VDouble $ d+1
-      updateVar i val'
-      return val'
-
-    decOp i = do
-      val <- lookupVar i
-      let val' = case val of
-            VInt i -> VInt $ i-1
-            VDouble d -> VDouble $ d-1
-      updateVar i val'
-      return val'
-
 -- * Variable handling
 
 addDecls  :: [Id] -> Eval ()
 addDecls (id:[])  = newVar id VVoid
-addDecls (id:ids) = do 
+addDecls (id:ids) = do
     newVar id VVoid
-    addDecls ids  
+    addDecls ids
 
 -- | The initial environment has one empty block.
 
@@ -250,7 +254,7 @@ newVar x v = modify $ \case
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
-    b:bs -> Map.adjust (\x -> v) i b : bs
+    bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
 lookupVar :: Id -> Eval Val
 lookupVar x = do
@@ -264,3 +268,11 @@ lookupDef id sig = do
   case Map.lookup id sig of
     Nothing -> error $ "undefined function " ++ printTree id
     Just d -> d
+
+incr :: Val -> Val
+incr (VInt i) = (VInt (i+1))
+incr (VDouble d) = (VDouble (d+1))
+
+decr :: Val -> Val
+decr (VInt i) = (VInt (i-1))
+decr (VDouble d) = (VDouble (d-1))
