@@ -67,6 +67,11 @@ evalStms = mapM_ evalStm
 
 evalStm :: Stm -> Eval ()
 evalStm s0 = case s0 of
+
+  SDecls t ids -> do addDecls ids
+  SReturn e ->  do
+    evalExp e
+    return()
   SInit t x e -> do
     v <- evalExp e
     newVar x v
@@ -77,20 +82,38 @@ evalStm s0 = case s0 of
     v <- evalExp e
     case v of
       (VBool True) -> do
+        enterNewBlock
         evalStm s
         evalStm s0
-      (VBool False) -> return ()
-      _ -> error  $ "FUCK"
-  SBlock ss -> evalStms ss
+        exitBlock
+      (VBool False) -> do
+        return ()
+  SBlock ss -> do
+    enterNewBlock
+    evalStms ss
+    exitBlock
   SIfElse e s1 s2 -> do
     v <- evalExp e
-    cxt <- get
-    let x = newBlock:cxt
     case v of
-      (VBool True) -> evalStm s1
-      _ -> evalStm s2
-  SReturn _ -> return ()
-  _ -> nyis
+      (VBool True)  -> do
+              enterNewBlock
+              evalStm s1
+              exitBlock
+      (VBool False) -> do
+              enterNewBlock
+              evalStm s2
+              exitBlock
+
+  where
+    enterNewBlock = do
+      env <- get
+      let newEnv = newBlock : env
+      put newEnv
+
+    exitBlock = do
+      env <- get
+      let oldEnv = drop 1 env
+      put oldEnv
 
 newBlock :: Block
 newBlock = Map.empty
@@ -98,12 +121,12 @@ newBlock = Map.empty
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
-  EInt i -> return $ VInt i
-  EId x      -> lookupVar x
-  EDouble d  -> return $ VDouble d
-  ETrue      -> return $ VBool True
-  EFalse -> return $ VBool False
-  EApp f es -> do
+  EInt i      -> return $ VInt i
+  EId x       -> lookupVar x
+  EDouble d   -> return $ VDouble d
+  ETrue       -> return $ VBool True
+  EFalse      -> return $ VBool False
+  EApp f es   -> do
     case f of
       (Id "printInt") -> do
         VInt i <- evalExp $ head es
@@ -119,60 +142,106 @@ evalExp = \case
       (Id "readDouble") -> do
         d <- liftIO $ getLine
         return $ VDouble $ read d
-      _ -> nyid
+
+  EOr e1 e2 -> do
+    v1 <- evalExp e1
+    v2 <- evalExp e2
+    case v1 of
+      (VBool True) -> return (VBool True)
+      (VBool False) -> case v2 of
+                        (VBool True)  -> return (VBool True)
+                        (VBool False) -> return (VBool True)
+
+  EAnd e1 e2 -> do
+    v1 <- evalExp e1
+    v2 <- evalExp e2
+    case v1 of
+      (VBool True) -> case v2 of
+                        (VBool True) -> return (VBool True)
+                        _            -> return (VBool False)
+      _            -> return (VBool False)
+
   ELt e1 e2 -> cmp (<) e1 e2
   EGt e1 e2 -> cmp (>) e1 e2
   ELtEq e1 e2   -> cmp (<=) e1 e2
   EGtEq e1 e2   -> cmp (>=) e1 e2
   EEq   e1 e2   -> cmp (==) e1 e2
   ENEq  e1 e2   -> cmp (/=) e1 e2
-  EPostIncr i -> do
-    val <- lookupVar i
-    let val' = case val of
-          VInt i -> VInt $ i+1
-          VDouble d -> VDouble $ d+1
-    updateVar i val'
-    return val'
-  EOr e1 e2 -> do
-      v1 <- evalExp e1
-      v2 <- evalExp e2
-      case v1 of
-        (VBool True) -> return (VBool True)
-        (VBool False) -> case v2 of
-                          (VBool True) -> return (VBool True)
-                          (VBool False) -> return (VBool True)
-  EAnd e1 e2 -> do
-      v1 <- evalExp e1
-      v2 <- evalExp e2
-      case v1 of
-        (VBool True) -> case v2 of
-                          (VBool True) -> return (VBool True)
-                          _            -> return (VBool False)
-        _ -> return (VBool False)
-  e -> nyi
+  EPostIncr i   -> do incOp i
+  EPostDecr i   -> do decOp i
+  EPreIncr i    -> do incOp i
+  EPreDecr i    -> do decOp i
+  ETimes e1 e2  -> do
+      (v1,v2) <- evalExps e1 e2
+      case (v1,v2) of
+        (VInt i1, VInt i2)        -> return (VInt (i1 * i2))
+        (VDouble d1, VDouble d2)  -> return (VDouble (d1 * d2))
+
+  EDiv e1 e2  -> do
+      (v1,v2) <- evalExps e1 e2
+      case (v1,v2) of
+        (VInt i1, VInt i2)        -> return (VInt (div i1 i2))
+        (VDouble d1, VDouble d2)  -> return (VDouble (d1 / d2))
+
+  EPlus e1 e2  -> do
+      (v1,v2) <- evalExps e1 e2
+      case (v1,v2) of
+        (VInt i1, VInt i2)        -> return (VInt (i1 + i2))
+        (VDouble d1, VDouble d2)  -> return (VDouble (d1 + d2))
+
+  EMinus e1 e2  -> do
+      (v1,v2) <- evalExps e1 e2
+      case (v1,v2) of
+        (VInt i1, VInt i2)        -> return (VInt (i1 - i2))
+        (VDouble d1, VDouble d2)  -> return (VDouble (d1 - d2))
+
+  EAss i e -> do
+      v <- evalExp e
+      updateVar i v
+      return v
+
   where
+    evalExps e1 e2 = do
+      v1 <- evalExp e1
+      v2 <- evalExp e2
+      return (v1,v2)
+
     cmp op e1 e2 = do
       v1 <- evalExp e1
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
 
+    incOp i = do
+      val <- lookupVar i
+      let val' = case val of
+            VInt i -> VInt $ i+1
+            VDouble d -> VDouble $ d+1
+      updateVar i val'
+      return val'
 
-shit = error "shit"
-fuck = error "fuck"
-piss = error "piss"
-omg = error "omg"
-nyi = error "NOT YET INTERPRETED"
-nyid = error "NOT YET FUNCTION INTR"
-nyis = error "NOT YET STM INTR"
-
+    decOp i = do
+      val <- lookupVar i
+      let val' = case val of
+            VInt i -> VInt $ i-1
+            VDouble d -> VDouble $ d-1
+      updateVar i val'
+      return val'
 
 -- * Variable handling
+
+addDecls  :: [Id] -> Eval ()
+addDecls (id:[])  = newVar id VVoid
+addDecls (id:ids) = do
+    newVar id VVoid
+    addDecls ids
 
 -- | The initial environment has one empty block.
 
 emptyEnv :: Env
 emptyEnv = [Map.empty]
 
+newBlock :: Block
+newBlock = Map.empty
 -- | Insert binding into top environment block.
 
 --newBlock :: Env
