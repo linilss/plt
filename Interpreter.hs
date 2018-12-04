@@ -82,10 +82,8 @@ evalStm s0 = case s0 of
     v <- evalExp e
     case v of
       (VBool True) -> do
-        enterNewBlock
         evalStm s
         evalStm s0
-        exitBlock
       (VBool False) -> do 
         return ()
   SBlock ss -> do
@@ -94,13 +92,12 @@ evalStm s0 = case s0 of
     exitBlock
   SIfElse e s1 s2 -> do 
     v <- evalExp e 
+    enterNewBlock
     case v of
       (VBool True)  -> do 
-              enterNewBlock
               evalStm s1
               exitBlock
       (VBool False) -> do 
-              enterNewBlock
               evalStm s2
               exitBlock
 
@@ -140,6 +137,10 @@ evalExp = \case
       (Id "readDouble") -> do
         d <- liftIO $ getLine
         return $ VDouble $ read d
+      _ -> do error $ "EApp not implemented for other than basic funcktions"
+          --sig <- ask
+          --let FunDef ids stms = lookupDef f sig
+          --let a b =  map evalExp es
 
   EOr e1 e2 -> do
     v1 <- evalExp e1
@@ -258,3 +259,8 @@ lookupVar x = do
     [] -> error "variable not declared in scope"
     (t:ts) -> return t
 
+lookupDef :: Id -> Sig -> FunDef
+lookupDef id sig = do
+  case Map.lookup id sig of
+    Nothing -> error $ "undefined function " ++ printTree id
+    Just d -> d
