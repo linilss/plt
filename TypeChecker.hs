@@ -120,8 +120,11 @@ checkStm = \case
       then return ()
       else throwError $ "Wrong return type"
   SWhile e s -> do
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     checkExp e Type_bool
     checkStm s
+    modifyCxt $ const cxt
   SBlock ss -> do
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
@@ -132,7 +135,9 @@ checkStm = \case
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
     checkStm s1
+    modifyCxt $ const (Map.empty:cxt)
     checkStm s2
+    modifyCxt $ const cxt
   s -> throwError $ "Bad statement"
 
 -- | Infer the type of an expression.

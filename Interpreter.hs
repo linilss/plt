@@ -60,7 +60,7 @@ interpret (PDefs defs) = do
 
 -- | Execute statements from left to right.
 
-evalStms :: [Stm] -> Eval ()
+evalStms :: [Stm] -> Eval ()  
 evalStms = mapM_ evalStm
 
 -- | Execute a single statement.
@@ -115,9 +115,6 @@ evalStm s0 = case s0 of
       let oldEnv = drop 1 env
       put oldEnv
 
-newBlock :: Block
-newBlock = Map.empty
--- | Evalute an expression to a value.
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
