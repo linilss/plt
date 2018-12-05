@@ -1,10 +1,9 @@
-int id(int x, int z) { return x; }
+int id(int x) {  }
 
 int main() {
   int z = 0;
-  int x = 0;
-  id(z,x);
-  
 
+  // Function calls
+  id(z);
   return 0;
 }

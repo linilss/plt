@@ -145,9 +145,15 @@ evalExp = \case
         sig <- ask
         let FunDef ids stms = lookupDef f sig
         let ess = es
-        evalExps es
-        evalStms stms
-        return VVoid
+        if (length es > 0) 
+          then do 
+            -- let vs = [i | i <- evalExp e, e <- es ]
+            evalExps es 
+            evalStms stms
+            return VVoid
+          else do
+            evalStms stms
+            return VVoid
       _ -> do error $ "EApp not implemented for other than basic funcktions"
           --sig <- ask
           --let a b =  map evalExp es
@@ -278,7 +284,7 @@ lookupDef id sig = do
   case Map.lookup id sig of
     Nothing -> error $ "undefined function " ++ printTree id
     Just d -> d
-    
+
 lookupVar :: Id -> Eval Val
 lookupVar x = do
   b <- get

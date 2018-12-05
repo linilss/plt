@@ -56,7 +56,6 @@ typecheck prg@(PDefs defs) = do
   let sig = builtin ++ map mkF defs
       mkF (DFun t f args _ss) = (f, FunType t $ map (\ (ADecl t _) -> t) args)
   -- Check for duplicate function definitions.
-  -- TODO!
 
   -- Prepare the initial state.
   let st = undefined -- St [] $ error "no return type set"
@@ -123,9 +122,9 @@ checkStm = \case
       then return ()
       else throwError $ "Wrong return type"
   SWhile e s -> do
+    checkExp e Type_bool
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
-    checkExp e Type_bool
     checkStm s
     modifyCxt $ const cxt
   SBlock ss -> do
@@ -138,10 +137,11 @@ checkStm = \case
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
     checkStm s1
+    modifyCxt $ const cxt
     modifyCxt $ const (Map.empty:cxt)
     checkStm s2
     modifyCxt $ const cxt
-  s -> throwError $ "Bad statement"
+  --s -> throwError $ "Bad statement"
 
 -- | Infer the type of an expression.
 inferExp :: Exp -> Check Type
