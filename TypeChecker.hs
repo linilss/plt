@@ -119,8 +119,11 @@ checkStm = \case
       then return ()
       else throwError $ "Wrong return type"
   SWhile e s -> do
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     checkExp e Type_bool
     checkStm s
+    modifyCxt $ const cxt
   SBlock ss -> do
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
@@ -205,7 +208,7 @@ inferExp = \case
     compareSimilarNumType e1 e2 = do
       t1 <- inferExp e1
       t2 <- inferExp e2
-      if (t1 == t2 && t1 `elem` [Type_int, Type_double] && t2 `elem` [Type_int, Type_double])
+      if (t1 == t2 && t1 `elem` [Type_int, Type_double, Type_bool] && t2 `elem` [Type_int, Type_double,Type_bool])
         then return Type_bool
         else throwError $ "different or wrong types in expression"
 

@@ -10,6 +10,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
 
+import Data.List (elemIndex)
 import Data.Functor
 import Data.Maybe
 import Data.Typeable
@@ -68,9 +69,10 @@ evalStms = mapM_ evalStm
 evalStm :: Stm -> Eval ()
 evalStm s0 = case s0 of
 
-  SDecls t ids -> do addDecls ids
+  SDecls t ids -> do
+    addDecls ids
   SReturn e ->  do
-    evalExp e
+    val <- evalExp e
     return()
   SInit t x e -> do
     v <- evalExp e
@@ -79,12 +81,16 @@ evalStm s0 = case s0 of
     evalExp e
     return ()
   SWhile e s -> do
+    enterNewBlock
     v <- evalExp e
     case v of
       (VBool True) -> do
+        enterNewBlock
         evalStm s
+        exitBlock
         evalStm s0
-      (VBool False) -> do 
+        exitBlock
+      (VBool False) -> do
         exitBlock
         return ()
   SBlock ss -> do
@@ -101,6 +107,7 @@ evalStm s0 = case s0 of
       (VBool False) -> do 
               evalStm s2
               exitBlock
+      _ -> error $ show v
 
   where
     enterNewBlock = do
@@ -111,8 +118,7 @@ evalStm s0 = case s0 of
     exitBlock = do
       env <- get
       let oldEnv = drop 1 env
-      put oldEnv
-
+      put oldEnv 
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -134,31 +140,97 @@ evalExp = \case
       (Id "readInt") -> do
         i <- liftIO $ getLine
         return (VInt (read i))
-      (Id "readDouble") -> do
+      (Id "readDouble") -> do   
         d <- liftIO $ getLine
         return $ VDouble $ read d
-      _ -> do error $ "EApp not implemented for other than basic funcktions"
-          --sig <- ask
-          --let FunDef ids stms = lookupDef f sig
-          --let a b =  map evalExp es
+      (Id i) -> do
+          sig <- ask
+          let x = []
+          let FunDef ids stms = lookupDef f sig
+          if es /= [] then do
+            vals <- evalExps es x
+            enterNewBlock
+            newVars ids vals
+            let returnStatement = checkIfReturn stms
+            let newStms = init stms
+            error $ show stms
+            evalStms newStms
+            case returnStatement of 
+              (SReturn e) -> do
+                val <- evalExp e
+                exitBlock
+                return val
+              _ -> do
+                evalStm returnStatement
+                exitBlock 
+                return VVoid
+
+            else do
+              enterNewBlock
+              let returnStatement = last stms
+              let newStms = init stms
+              evalStms newStms
+              case returnStatement of 
+                (SReturn e) -> do
+                  val <- evalExp e
+                  exitBlock
+                  return val
+                _ -> do 
+                  evalStm returnStatement
+                  exitBlock
+                  return VVoid
+
+          ------------------------------------------------------
+          --let ess = es
+          --if (length es > 0) 
+           -- then do 
+            -- let vs = [i | i <- evalExp e, e <- es ]
+
+            --evalExps es 
+            --evalStms stms
+            --return VVoid
+            --else do
+             -- evalStms stms
+            --return VVoid
+      _ -> do error $ "EApp not implemented for other than basic functions"
+      where
+        evalExps (e:[]) vars = do
+          v <- evalExp e
+          let xs = vars ++ [v]
+          return xs
+        evalExps (e:es) vars  = do
+          v <- evalExp e
+          let xs = vars ++ [v]
+          evalExps es xs
+
+        newVars (id:[]) (v:[]) = do
+          newVar id  v
+
+        newVars (id:ids) (v:vals) = do
+          newVar id v 
+          newVars ids vals
+
+        enterNewBlock = do
+          env <- get
+          let newEnv = newBlock : env
+          put newEnv
+
+        exitBlock = do
+          env <- get
+          let oldEnv = drop 1 env
+          put oldEnv
 
   EOr e1 e2 -> do
     v1 <- evalExp e1
-    v2 <- evalExp e2
-    case v1 of
-      (VBool True) -> return (VBool True)
-      (VBool False) -> case v2 of
-                        (VBool True)  -> return (VBool True)
-                        (VBool False) -> return (VBool True)
+    if (v1 == VBool True)
+      then return v1
+      else evalExp e2
 
   EAnd e1 e2 -> do
     v1 <- evalExp e1
-    v2 <- evalExp e2
-    case v1 of
-      (VBool True) -> case v2 of
-                        (VBool True) -> return (VBool True)
-                        _            -> return (VBool False)
-      _            -> return (VBool False)
+    if (v1 == VBool False)
+        then return v1
+        else evalExp e2
 
   ELt e1 e2 -> cmp (<) e1 e2
   EGt e1 e2 -> cmp (>) e1 e2
@@ -184,7 +256,7 @@ evalExp = \case
       return $ case val of 
         (VInt i) -> (VInt (i))
         (VDouble d) -> (VDouble (d))
-  EPreDecr id -> do 
+  EPreDecr id  -> do 
       val <- lookupVar id
       updateVar id (decr val)
       return $ case val of 
@@ -230,6 +302,12 @@ evalExp = \case
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
 
+checkIfReturn :: [Stm] -> Stm
+checkIfReturn (s:[]) = s 
+checkIfReturn (s:ss) = do 
+    case s of 
+        (SReturn e) -> s
+        _           -> checkIfReturn ss
 -- * Variable handling
 
 addDecls  :: [Id] -> Eval ()
@@ -249,8 +327,11 @@ newBlock = Map.empty
 
 newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
-  b:bs -> Map.insert x v b : bs
+  b:bs -> case Map.lookup x b of
+            Just val -> error $ "Variable already exists"
+            Nothing -> Map.insert x v b : bs
 
+--NOTE!! UpdateVar poss not correct, can be the reason why good17 fails. 
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
@@ -260,7 +341,7 @@ lookupVar :: Id -> Eval Val
 lookupVar x = do
   b <- get
   case catMaybes $ map (Map.lookup x) b of
-    [] -> error "variable not declared in scope"
+    [] -> error $ show x ++ " variable not declared in scope"
     (t:ts) -> return t
 
 lookupDef :: Id -> Sig -> FunDef
