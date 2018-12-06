@@ -52,7 +52,7 @@ data Val
 interpret :: Program -> IO ()
 interpret (PDefs defs) = do
   -- Prepare the signature.
-  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) ss)
+  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) (checkTilReturn ss))
   let sig = Map.fromList $ map sigEntry defs
   -- Find the entry point ("main" function).
   let ss = maybe (error "no main") funBody $ Map.lookup (Id "main") sig
@@ -165,6 +165,7 @@ evalExp = \case
             vals <- evalExps es x
             enterNewBlock
             newVars ids vals
+            
             val <- evalStms stms
             exitBlock
             return val
@@ -291,7 +292,11 @@ checkIfReturn (s:ss) = do
         _           -> checkIfReturn ss
 
 checkTilReturn :: [Stm] -> [Stm]
-checkTilReturn ss = reverse $ checkTilReturn' $ reverse ss
+checkTilReturn ss = do 
+  let sss = reverse $ checkTilReturn' $ reverse ss
+  case sss of
+    [] -> ss
+    es -> sss
 
 checkTilReturn' :: [Stm] -> [Stm]
 checkTilReturn' [] = []
