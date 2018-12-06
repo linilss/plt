@@ -80,7 +80,6 @@ checkProgram (PDefs defs) dups = do
   unless (dups) $ throwError "dup"
   unless (length defs > 0) $ throwError "Empty program not allowed"
   mapM_ checkDef defs
-  -- TODO: checkMain
 
 -- | Check a single function definition.
 checkDef :: Def -> Check ()

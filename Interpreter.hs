@@ -57,56 +57,69 @@ interpret (PDefs defs) = do
   -- Find the entry point ("main" function).
   let ss = maybe (error "no main") funBody $ Map.lookup (Id "main") sig
   -- Run the statements in the initial environment.
-  () <$ runExceptT (evalStateT (runReaderT (evalStms $ checkTilReturn ss) sig) emptyEnv)
+  () <$ runExceptT (evalStateT (runReaderT (evalStms $ ss) sig) emptyEnv)
 
 -- | Execute statements from left to right.
 
-evalStms :: [Stm] -> Eval ()  
-evalStms = mapM_ evalStm
+evalStms :: [Stm] -> Eval Val
+evalStms []  =  do 
+  return VVoid
+evalStms  (s:ss) = do
+  v <- evalStm s 
+  case v of 
+    VVoid -> evalStms ss
+    _     -> return v
 
 -- | Execute a single statement.
 
-evalStm :: Stm -> Eval ()
+evalStm :: Stm -> Eval Val
 evalStm s0 = case s0 of
 
+  SReturn e -> do
+    val <- evalExp e
+    return val
   SDecls t ids -> do
     addDecls ids
-  SReturn e ->  do
-    val <- evalExp e
-    return()
+    return VVoid
   SInit t x e -> do
     v <- evalExp e
     newVar x v
+    return VVoid 
   SExp e -> do
     evalExp e
-    return ()
+    return VVoid 
   SWhile e s -> do
     enterNewBlock
     v <- evalExp e
     case v of
       (VBool True) -> do
         enterNewBlock
-        evalStm s
+        vv <- evalStms [s]
         exitBlock
-        evalStm s0
+        v <- evalStms [s0]
         exitBlock
+        return vv
       (VBool False) -> do
         exitBlock
-        return ()
+        return VVoid
   SBlock ss -> do
     enterNewBlock
-    evalStms ss
+    v <- evalStms ss
+    --  liftIO $ putStrLn $ show v
     exitBlock
+    return v
   SIfElse e s1 s2 -> do 
     v <- evalExp e 
     enterNewBlock
     case v of
       (VBool True)  -> do 
-              evalStm s1
+              v <- evalStms [s1]
               exitBlock
+              return v
       (VBool False) -> do 
-              evalStm s2
+              v <- evalStms [s2]
               exitBlock
+              return v
       _ -> error $ show v
 
   where
@@ -147,55 +160,20 @@ evalExp = \case
           sig <- ask
           let x = []
           let FunDef ids stms = lookupDef f sig
+
           if es /= [] then do
             vals <- evalExps es x
             enterNewBlock
             newVars ids vals
-            let returnStatement = checkIfReturn stms
-                newStms = checkTilReturn stms
-            --error $ show newStms
-
-            --error $ show stms
-            case returnStatement of 
-              (SReturn e) -> do
-                evalStms newStms
-                val <- evalExp e
-                exitBlock
-                return val
-              _ -> do
-                evalStms stms
-                evalStm returnStatement
-                exitBlock 
-                return VVoid
+            val <- evalStms stms
+            exitBlock
+            return val
 
             else do
               enterNewBlock
-              let returnStatement = last stms
-              let newStms = init stms
-              evalStms newStms
-              case returnStatement of 
-                (SReturn e) -> do
-                  val <- evalExp e
-                  exitBlock
-                  return val
-                _ -> do 
-                  evalStm returnStatement
-                  exitBlock
-                  return VVoid
-
-          ------------------------------------------------------
-          --let ess = es
-          --if (length es > 0) 
-           -- then do 
-            -- let vs = [i | i <- evalExp e, e <- es ]
-
-            --evalExps es 
-            --evalStms stms
-            --return VVoid
-            --else do
-             -- evalStms stms
-            --return VVoid
-      _ -> do error $ "EApp not implemented for other than basic functions"
+              val <- evalStms stms
+              exitBlock
+              return val
       where
         evalExps (e:[]) vars = do
           v <- evalExp e
