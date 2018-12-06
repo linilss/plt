@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 int id(int x) {  }
 
 int main() {
@@ -7,3 +8,11 @@ int main() {
   id(z);
   return 0;
 }
+=======
+
+
+
+int main() {
+  return 10;
+}
+>>>>>>> mile

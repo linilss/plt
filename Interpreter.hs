@@ -10,6 +10,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.State
 
+import Data.List (elemIndex)
 import Data.Functor
 import Data.Maybe
 import Data.Typeable
@@ -51,47 +52,77 @@ data Val
 interpret :: Program -> IO ()
 interpret (PDefs defs) = do
   -- Prepare the signature.
-  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) ss)
+  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) (checkTilReturn ss))
   let sig = Map.fromList $ map sigEntry defs
   -- Find the entry point ("main" function).
   let ss = maybe (error "no main") funBody $ Map.lookup (Id "main") sig
   -- Run the statements in the initial environment.
-  () <$ runExceptT (evalStateT (runReaderT (evalStms ss) sig) emptyEnv)
+  () <$ runExceptT (evalStateT (runReaderT (evalStms $ ss) sig) emptyEnv)
 
 -- | Execute statements from left to right.
 
-evalStms :: [Stm] -> Eval ()  
-evalStms = mapM_ evalStm
+evalStms :: [Stm] -> Eval Val
+evalStms []  =  do 
+  return VVoid
+evalStms  (s:ss) = do
+  v <- evalStm s 
+  case v of 
+    VVoid -> evalStms ss
+    _     -> return v
 
 -- | Execute a single statement.
 
-evalStm :: Stm -> Eval ()
+evalStm :: Stm -> Eval Val
 evalStm s0 = case s0 of
 
+<<<<<<< HEAD
   SDecls t ids -> do addDecls ids
   SReturn e ->  do
     v1 <- evalExp e
     return()
+=======
+  SReturn e -> do
+    val <- evalExp e
+    return val
+  SDecls t ids -> do
+    addDecls ids
+    return VVoid
+>>>>>>> mile
   SInit t x e -> do
     v <- evalExp e
     newVar x v
+    return VVoid 
   SExp e -> do
     evalExp e
-    return ()
+    return VVoid 
   SWhile e s -> do
+    enterNewBlock
     v <- evalExp e
     case v of
       (VBool True) -> do
         enterNewBlock
+<<<<<<< HEAD
         evalStm s
         evalStm s0
         exitBlock
       (VBool False) -> do
         return ()
+=======
+        vv <- evalStms [s]
+        exitBlock
+        v <- evalStms [s0]
+        exitBlock
+        return vv
+      (VBool False) -> do
+        exitBlock
+        return VVoid
+>>>>>>> mile
   SBlock ss -> do
     enterNewBlock
-    evalStms ss
+    v <- evalStms ss
+    --  liftIO $ putStrLn $ show v
     exitBlock
+<<<<<<< HEAD
   SIfElse e s1 s2 -> do
     v <- evalExp e
     case v of
@@ -102,7 +133,22 @@ evalStm s0 = case s0 of
       (VBool False) -> do
               enterNewBlock
               evalStm s2
+=======
+    return v
+  SIfElse e s1 s2 -> do 
+    v <- evalExp e 
+    enterNewBlock
+    case v of
+      (VBool True)  -> do 
+              v <- evalStms [s1]
               exitBlock
+              return v
+      (VBool False) -> do 
+              v <- evalStms [s2]
+>>>>>>> mile
+              exitBlock
+              return v
+      _ -> error $ show v
 
   where
     enterNewBlock = do
@@ -113,10 +159,14 @@ evalStm s0 = case s0 of
     exitBlock = do
       env <- get
       let oldEnv = drop 1 env
+<<<<<<< HEAD
       put oldEnv
 
 -- evalExps :: [Exp] -> Eval Val
 -- evalExps = mapM_ evalExp
+=======
+      put oldEnv 
+>>>>>>> mile
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -138,10 +188,11 @@ evalExp = \case
       (Id "readInt") -> do
         i <- liftIO $ getLine
         return (VInt (read i))
-      (Id "readDouble") -> do
+      (Id "readDouble") -> do   
         d <- liftIO $ getLine
         return $ VDouble $ read d
       (Id i) -> do
+<<<<<<< HEAD
         sig <- ask
         let FunDef ids stms = lookupDef f sig
         let ess = es
@@ -163,24 +214,64 @@ evalExp = \case
         evalExps (e:es) = do
           v <- evalExp e
           evalExps es
+=======
+          sig <- ask
+          let x = []
+          let FunDef ids stms = lookupDef f sig
+
+          if es /= [] then do
+            vals <- evalExps es x
+            enterNewBlock
+            newVars ids vals
+            
+            val <- evalStms stms
+            exitBlock
+            return val
+
+            else do
+              enterNewBlock
+              val <- evalStms stms
+              exitBlock
+              return val
+      where
+        evalExps (e:[]) vars = do
+          v <- evalExp e
+          let xs = vars ++ [v]
+          return xs
+        evalExps (e:es) vars  = do
+          v <- evalExp e
+          let xs = vars ++ [v]
+          evalExps es xs
+
+        newVars (id:[]) (v:[]) = do
+          newVar id  v
+
+        newVars (id:ids) (v:vals) = do
+          newVar id v 
+          newVars ids vals
+
+        enterNewBlock = do
+          env <- get
+          let newEnv = newBlock : env
+          put newEnv
+
+        exitBlock = do
+          env <- get
+          let oldEnv = drop 1 env
+          put oldEnv
+>>>>>>> mile
 
   EOr e1 e2 -> do
     v1 <- evalExp e1
-    v2 <- evalExp e2
-    case v1 of
-      (VBool True) -> return (VBool True)
-      (VBool False) -> case v2 of
-                        (VBool True)  -> return (VBool True)
-                        (VBool False) -> return (VBool True)
+    if (v1 == VBool True)
+      then return v1
+      else evalExp e2
 
   EAnd e1 e2 -> do
     v1 <- evalExp e1
-    v2 <- evalExp e2
-    case v1 of
-      (VBool True) -> case v2 of
-                        (VBool True) -> return (VBool True)
-                        _            -> return (VBool False)
-      _            -> return (VBool False)
+    if (v1 == VBool False)
+        then return v1
+        else evalExp e2
 
   ELt e1 e2 -> cmp (<) e1 e2
   EGt e1 e2 -> cmp (>) e1 e2
@@ -188,10 +279,30 @@ evalExp = \case
   EGtEq e1 e2   -> cmp (>=) e1 e2
   EEq   e1 e2   -> cmp (==) e1 e2
   ENEq  e1 e2   -> cmp (/=) e1 e2
-  EPostIncr i   -> do incOp i
-  EPostDecr i   -> do decOp i
-  EPreIncr i    -> do incOp i
-  EPreDecr i    -> do decOp i
+  EPostIncr id   -> do 
+      val <- lookupVar id
+      updateVar id (incr val)
+      return $ case val of 
+        (VInt i) -> (VInt i)
+        (VDouble d) -> (VDouble d)
+  EPreIncr id    -> do 
+      val <- lookupVar id
+      updateVar id (incr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i+1))
+        (VDouble d) -> (VDouble (d+1))     
+  EPostDecr id -> do
+      val <- lookupVar id
+      updateVar id (decr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i))
+        (VDouble d) -> (VDouble (d))
+  EPreDecr id  -> do 
+      val <- lookupVar id
+      updateVar id (decr val)
+      return $ case val of 
+        (VInt i) -> (VInt (i-1))
+        (VDouble d) -> (VDouble (d-1))
   ETimes e1 e2  -> do
       (v1,v2) <- evalExps e1 e2
       case (v1,v2) of
@@ -232,22 +343,26 @@ evalExp = \case
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
 
-    incOp i = do
-      val <- lookupVar i
-      let val' = case val of
-            VInt i -> VInt $ i+1
-            VDouble d -> VDouble $ d+1
-      updateVar i val'
-      return val'
+checkIfReturn :: [Stm] -> Stm
+checkIfReturn (s:[]) = s 
+checkIfReturn (s:ss) = do 
+    case s of 
+        (SReturn e) -> s
+        _           -> checkIfReturn ss
 
-    decOp i = do
-      val <- lookupVar i
-      let val' = case val of
-            VInt i -> VInt $ i-1
-            VDouble d -> VDouble $ d-1
-      updateVar i val'
-      return val'
+checkTilReturn :: [Stm] -> [Stm]
+checkTilReturn ss = do 
+  let sss = reverse $ checkTilReturn' $ reverse ss
+  case sss of
+    [] -> ss
+    es -> sss
 
+checkTilReturn' :: [Stm] -> [Stm]
+checkTilReturn' [] = []
+checkTilReturn' (s:ss) = do 
+    case s of 
+        (SReturn e) -> (s:ss)
+        _           -> checkTilReturn' ss
 -- * Variable handling
 
 addDecls  :: [Id] -> Eval ()
@@ -272,12 +387,22 @@ newBlock = Map.empty
 
 newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
-  b:bs -> Map.insert x v b : bs
+  b:bs -> case Map.lookup x b of
+            Just val -> error $ "Variable already exists"
+            Nothing -> Map.insert x v b : bs
 
+--NOTE!! UpdateVar poss not correct, can be the reason why good17 fails. 
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
     bs -> [Map.adjust (\x -> v) i b | b <- bs]
+
+lookupVar :: Id -> Eval Val
+lookupVar x = do
+  b <- get
+  case catMaybes $ map (Map.lookup x) b of
+    [] -> error $ show x ++ " variable not declared in scope"
+    (t:ts) -> return t
 
 lookupDef :: Id -> Sig -> FunDef
 lookupDef id sig = do

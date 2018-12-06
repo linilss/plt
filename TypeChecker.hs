@@ -80,7 +80,6 @@ checkProgram (PDefs defs) dups = do
   unless (dups) $ throwError "dup"
   unless (length defs > 0) $ throwError "Empty program not allowed"
   mapM_ checkDef defs
-  -- TODO: checkMain
 
 -- | Check a single function definition.
 checkDef :: Def -> Check ()
@@ -88,11 +87,20 @@ checkDef (DFun t f args ss) = do
   let mainArgs = case f of
         (Id "main") -> length args
         _ -> 0
+<<<<<<< HEAD
       mainBody = case f of
         (Id "main") -> length ss
         _ -> 1
   unless (mainArgs == 0) $ throwError "No args allowed in main"
   unless (mainBody > 0) $ throwError "No function body"
+=======
+  let mainStms = case f of 
+        (Id "main") -> length ss
+        _ -> 0
+  unless (mainArgs == 0) $ throwError "No args allowed in main"
+  --unless (length ss > 0) $ throwError "No function body"
+
+>>>>>>> mile
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.
@@ -122,6 +130,8 @@ checkStm = \case
       then return ()
       else throwError $ "Wrong return type"
   SWhile e s -> do
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     checkExp e Type_bool
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
@@ -213,7 +223,7 @@ inferExp = \case
     compareSimilarNumType e1 e2 = do
       t1 <- inferExp e1
       t2 <- inferExp e2
-      if (t1 == t2 && t1 `elem` [Type_int, Type_double] && t2 `elem` [Type_int, Type_double])
+      if (t1 == t2 && t1 `elem` [Type_int, Type_double, Type_bool] && t2 `elem` [Type_int, Type_double,Type_bool])
         then return Type_bool
         else throwError $ "different or wrong types in expression"
 
