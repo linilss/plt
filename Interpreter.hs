@@ -52,17 +52,19 @@ data Val
 interpret :: Program -> IO ()
 interpret (PDefs defs) = do
   -- Prepare the signature.
-  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) ss)
+  let sigEntry (DFun _ f args ss) = (f, FunDef (map (\ (ADecl _ x) -> x) args) (checkTilReturn ss))
   let sig = Map.fromList $ map sigEntry defs
   -- Find the entry point ("main" function).
   let ss = maybe (error "no main") funBody $ Map.lookup (Id "main") sig
   -- Run the statements in the initial environment.
-  () <$ runExceptT (evalStateT (runReaderT (evalStms $ checkTilReturn ss) sig) emptyEnv)
+  () <$ runExceptT (evalStateT (runReaderT (evalStms ss) sig) emptyEnv)
 
 -- | Execute statements from left to right.
 
 evalStms :: [Stm] -> Eval ()  
-evalStms = mapM_ evalStm
+evalStms ss = do 
+  liftIO $ putStrLn $ show ss
+  mapM_ evalStm ss
 
 -- | Execute a single statement.
 
@@ -153,9 +155,6 @@ evalExp = \case
             newVars ids vals
             let returnStatement = checkIfReturn stms
                 newStms = checkTilReturn stms
-            --error $ show newStms
-
-            --error $ show stms
             case returnStatement of 
               (SReturn e) -> do
                 evalStms newStms
@@ -164,7 +163,6 @@ evalExp = \case
                 return val
               _ -> do
                 evalStms stms
-                evalStm returnStatement
                 exitBlock 
                 return VVoid
 
@@ -313,7 +311,11 @@ checkIfReturn (s:ss) = do
         _           -> checkIfReturn ss
 
 checkTilReturn :: [Stm] -> [Stm]
-checkTilReturn ss = reverse $ checkTilReturn' $ reverse ss
+checkTilReturn ss = do 
+  let sss = reverse $ checkTilReturn' $ reverse ss
+  case sss of
+    [] -> ss
+    es -> sss
 
 checkTilReturn' :: [Stm] -> [Stm]
 checkTilReturn' [] = []
