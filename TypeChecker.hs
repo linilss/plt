@@ -87,8 +87,12 @@ checkDef (DFun t f args ss) = do
   let mainArgs = case f of
         (Id "main") -> length args
         _ -> 0
+  let mainStms = case f of 
+        (Id "main") -> length ss
+        _ -> 0
   unless (mainArgs == 0) $ throwError "No args allowed in main"
-  unless (length ss > 0) $ throwError "No function body"
+  --unless (length ss > 0) $ throwError "No function body"
+
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.

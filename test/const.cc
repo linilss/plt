@@ -1,7 +1,6 @@
-void empty() {
-  
-}
+
+
 
 int main() {
-  return 0;
+  return 10;
 }
