@@ -75,19 +75,12 @@ evalStms  (s:ss) = do
 evalStm :: Stm -> Eval Val
 evalStm s0 = case s0 of
 
-<<<<<<< HEAD
-  SDecls t ids -> do addDecls ids
-  SReturn e ->  do
-    v1 <- evalExp e
-    return()
-=======
   SReturn e -> do
     val <- evalExp e
     return val
   SDecls t ids -> do
     addDecls ids
     return VVoid
->>>>>>> mile
   SInit t x e -> do
     v <- evalExp e
     newVar x v
@@ -101,13 +94,6 @@ evalStm s0 = case s0 of
     case v of
       (VBool True) -> do
         enterNewBlock
-<<<<<<< HEAD
-        evalStm s
-        evalStm s0
-        exitBlock
-      (VBool False) -> do
-        return ()
-=======
         vv <- evalStms [s]
         exitBlock
         v <- evalStms [s0]
@@ -116,24 +102,11 @@ evalStm s0 = case s0 of
       (VBool False) -> do
         exitBlock
         return VVoid
->>>>>>> mile
   SBlock ss -> do
     enterNewBlock
     v <- evalStms ss
     --  liftIO $ putStrLn $ show v
     exitBlock
-<<<<<<< HEAD
-  SIfElse e s1 s2 -> do
-    v <- evalExp e
-    case v of
-      (VBool True)  -> do
-              enterNewBlock
-              evalStm s1
-              exitBlock
-      (VBool False) -> do
-              enterNewBlock
-              evalStm s2
-=======
     return v
   SIfElse e s1 s2 -> do 
     v <- evalExp e 
@@ -145,7 +118,6 @@ evalStm s0 = case s0 of
               return v
       (VBool False) -> do 
               v <- evalStms [s2]
->>>>>>> mile
               exitBlock
               return v
       _ -> error $ show v
@@ -159,14 +131,7 @@ evalStm s0 = case s0 of
     exitBlock = do
       env <- get
       let oldEnv = drop 1 env
-<<<<<<< HEAD
-      put oldEnv
-
--- evalExps :: [Exp] -> Eval Val
--- evalExps = mapM_ evalExp
-=======
       put oldEnv 
->>>>>>> mile
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -192,29 +157,6 @@ evalExp = \case
         d <- liftIO $ getLine
         return $ VDouble $ read d
       (Id i) -> do
-<<<<<<< HEAD
-        sig <- ask
-        let FunDef ids stms = lookupDef f sig
-        let ess = es
-        if (length es > 0) 
-          then do 
-            -- let vs = [i | i <- evalExp e, e <- es ]
-            evalExps es 
-            evalStms stms
-            return VVoid
-          else do
-            evalStms stms
-            return VVoid
-      _ -> do error $ "EApp not implemented for other than basic funcktions"
-          --sig <- ask
-          --let a b =  map evalExp es
-      where
-        evalExps (e:[]) = do
-          evalExp e
-        evalExps (e:es) = do
-          v <- evalExp e
-          evalExps es
-=======
           sig <- ask
           let x = []
           let FunDef ids stms = lookupDef f sig
@@ -259,7 +201,6 @@ evalExp = \case
           env <- get
           let oldEnv = drop 1 env
           put oldEnv
->>>>>>> mile
 
   EOr e1 e2 -> do
     v1 <- evalExp e1
@@ -342,6 +283,17 @@ evalExp = \case
       v1 <- evalExp e1
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
+   -- updateVa i v = do
+   --   modify $ \case
+   --     bs -> [Map.adjust (\x -> v) i b | b <- bs]
+
+--      do 
+--      bs <- get
+--      let newB = checkAndUpdate i v bs []
+--      return ()
+--    checkAndUpdate id val (b:bs) cs = cs
+
+
 
 checkIfReturn :: [Stm] -> Stm
 checkIfReturn (s:[]) = s 
@@ -380,11 +332,6 @@ newBlock :: Block
 newBlock = Map.empty
 -- | Insert binding into top environment block.
 
---newBlock :: Env
---newBlock = do
---  cxt <- get
---  put [Map.empty]:cxt
-
 newVar :: Id -> Val -> Eval ()
 newVar x v = modify $ \case
   b:bs -> case Map.lookup x b of
@@ -395,7 +342,9 @@ newVar x v = modify $ \case
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
-    bs -> [Map.adjust (\x -> v) i b | b <- bs]
+    (b:bs) -> Map.adjust (\x -> v) i b 
+
+-- bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
 lookupVar :: Id -> Eval Val
 lookupVar x = do
@@ -410,10 +359,10 @@ lookupDef id sig = do
     Nothing -> error $ "undefined function " ++ printTree id
     Just d -> d
 
-lookupVar :: Id -> Eval Val
-lookupVar x = do
-  b <- get
-  case catMaybes $ map (Map.lookup x) b of
-    [] -> error "variable not declared in scope"
-    (t:ts) -> return t
+incr :: Val -> Val
+incr (VInt i) = (VInt (i+1))
+incr (VDouble d) = (VDouble (d+1))
 
+decr :: Val -> Val
+decr (VInt i) = (VInt (i-1))
+decr (VDouble d) = (VDouble (d-1))

@@ -87,20 +87,12 @@ checkDef (DFun t f args ss) = do
   let mainArgs = case f of
         (Id "main") -> length args
         _ -> 0
-<<<<<<< HEAD
-      mainBody = case f of
+  let mainStms = case f of 
         (Id "main") -> length ss
         _ -> 1
   unless (mainArgs == 0) $ throwError "No args allowed in main"
-  unless (mainBody > 0) $ throwError "No function body"
-=======
-  let mainStms = case f of 
-        (Id "main") -> length ss
-        _ -> 0
-  unless (mainArgs == 0) $ throwError "No args allowed in main"
-  --unless (length ss > 0) $ throwError "No function body"
+  unless (mainStms > 0) $ throwError "No function body in main"
 
->>>>>>> mile
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.
@@ -133,8 +125,6 @@ checkStm = \case
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
     checkExp e Type_bool
-    cxt <- gets stCxt
-    modifyCxt $ const (Map.empty:cxt)
     checkStm s
     modifyCxt $ const cxt
   SBlock ss -> do
@@ -191,16 +181,14 @@ inferExp = \case
   EGt e1 e2   -> compareSimilarNumType e1 e2
   ELtEq e1 e2 -> compareSimilarNumType e1 e2
   EGtEq e1 e2 -> compareSimilarNumType e1 e2
-  EEq e1 e2   -> compareSimilarNumType e1 e2
-  ENEq e1 e2  -> compareSimilarNumType e1 e2
+  EEq e1 e2   -> compareSimilarType e1 e2
+  ENEq e1 e2  -> compareSimilarType e1 e2
   EAnd e1 e2  -> compareSimilarType e1 e2
   EOr e1 e2   -> compareSimilarType e1 e2
   EAss i e    -> do 
     t1 <- lookupVar i
     t2 <- inferExp e
-    if t1 == t2 
-      then return t1 
-      else throwError $ show i ++ " not declared as " ++ show t2
+    if t1 == t2 then return t1 else throwError (show i ++ " not declared as " ++ show t2)
   --e -> throwError $ "Bad expression"
   where
     multTypes e1 e2 = do
@@ -223,7 +211,7 @@ inferExp = \case
     compareSimilarNumType e1 e2 = do
       t1 <- inferExp e1
       t2 <- inferExp e2
-      if (t1 == t2 && t1 `elem` [Type_int, Type_double, Type_bool] && t2 `elem` [Type_int, Type_double,Type_bool])
+      if (t1 == t2 && t1 `elem` [Type_int, Type_double] && t2 `elem` [Type_int, Type_double])
         then return Type_bool
         else throwError $ "different or wrong types in expression"
 

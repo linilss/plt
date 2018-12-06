@@ -1,18 +1,19 @@
-<<<<<<< HEAD
-int id(int x) {  }
+int main () {
+  int x = 0;
 
-int main() {
-  int z = 0;
+  if (true)
+    { int x = 1; }
+  else
+    {}
+  printInt(x);
 
-  // Function calls
-  id(z);
+  if (true) {
+    int x;
+    x = 2;
+  }
+  else
+    {}
+  printInt(x);
+
   return 0;
 }
-=======
-
-
-
-int main() {
-  return 10;
-}
->>>>>>> mile
