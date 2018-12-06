@@ -57,7 +57,7 @@ interpret (PDefs defs) = do
   -- Find the entry point ("main" function).
   let ss = maybe (error "no main") funBody $ Map.lookup (Id "main") sig
   -- Run the statements in the initial environment.
-  () <$ runExceptT (evalStateT (runReaderT (evalStms ss) sig) emptyEnv)
+  () <$ runExceptT (evalStateT (runReaderT (evalStms $ checkTilReturn ss) sig) emptyEnv)
 
 -- | Execute statements from left to right.
 
@@ -152,15 +152,18 @@ evalExp = \case
             enterNewBlock
             newVars ids vals
             let returnStatement = checkIfReturn stms
-            let newStms = init stms
-            error $ show stms
-            evalStms newStms
+                newStms = checkTilReturn stms
+            --error $ show newStms
+
+            --error $ show stms
             case returnStatement of 
               (SReturn e) -> do
+                evalStms newStms
                 val <- evalExp e
                 exitBlock
                 return val
               _ -> do
+                evalStms stms
                 evalStm returnStatement
                 exitBlock 
                 return VVoid
@@ -308,6 +311,16 @@ checkIfReturn (s:ss) = do
     case s of 
         (SReturn e) -> s
         _           -> checkIfReturn ss
+
+checkTilReturn :: [Stm] -> [Stm]
+checkTilReturn ss = reverse $ checkTilReturn' $ reverse ss
+
+checkTilReturn' :: [Stm] -> [Stm]
+checkTilReturn' [] = []
+checkTilReturn' (s:ss) = do 
+    case s of 
+        (SReturn e) -> (s:ss)
+        _           -> checkTilReturn' ss
 -- * Variable handling
 
 addDecls  :: [Id] -> Eval ()

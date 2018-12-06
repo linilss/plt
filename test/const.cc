@@ -13,8 +13,8 @@ bool foo(int x) {
 
     bool b = true;
 
-    printInt(x);
 
+    printInt(x);
     return b;
 }
 
