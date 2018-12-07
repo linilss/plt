@@ -283,17 +283,6 @@ evalExp = \case
       v1 <- evalExp e1
       v2 <- evalExp e2
       return (VBool $ v1 `op` v2)
-   -- updateVa i v = do
-   --   modify $ \case
-   --     bs -> [Map.adjust (\x -> v) i b | b <- bs]
-
---      do
---      bs <- get
---      let newB = checkAndUpdate i v bs []
---      return ()
---    checkAndUpdate id val (b:bs) cs = cs
-
-
 
 checkIfReturn :: [Stm] -> Stm
 checkIfReturn (s:[]) = s
@@ -324,7 +313,6 @@ addDecls (id:ids) = do
     addDecls ids
 
 -- | The initial environment has one empty block.
-
 emptyEnv :: Env
 emptyEnv = [Map.empty]
 

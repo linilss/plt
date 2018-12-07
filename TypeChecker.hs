@@ -189,7 +189,6 @@ inferExp = \case
     t1 <- lookupVar i
     t2 <- inferExp e
     if t1 == t2 then return t1 else throwError (show i ++ " not declared as " ++ show t2)
-  --e -> throwError $ "Bad expression"
   where
     multTypes e1 e2 = do
       t1 <- inferExp e1
