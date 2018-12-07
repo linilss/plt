@@ -342,7 +342,16 @@ newVar x v = modify $ \case
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
-    (b:bs) -> Map.adjust (\x -> v) i b 
+    bs -> the bs i
+    where
+      the (b:bs) i = do
+        case Map.lookup i b of
+            Just val -> (Map.adjust (\x -> v) i b):bs
+            Nothing -> the' bs i (b:[])
+      the' (b:bs) i cs = do
+        case Map.lookup i b of
+            Just val -> cs ++ (Map.adjust (\x -> v) i b):bs
+            Nothing -> the' bs i (cs++[b])
 
 -- bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
