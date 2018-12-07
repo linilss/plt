@@ -1,15 +1,19 @@
-<<<<<<< HEAD
 int main () {
-	if (2 < 1) { } else { }
-	return 0;
-=======
-int main() {
-  int x = 78;
+  int x = 0;
 
-  while (x > 76) {
-    x--;
-    printInt(x);
-   	int i = 7;
+  if (true)
+    { int x = 1; }
+  else
+    {}
+  printInt(x);
+
+  if (true) {
+    int x;
+    x = 2;
   }
->>>>>>> origin/mile
+  else
+    {}
+  printInt(x);
+
+  return 0;
 }

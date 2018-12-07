@@ -56,7 +56,6 @@ typecheck prg@(PDefs defs) = do
   let sig = builtin ++ map mkF defs
       mkF (DFun t f args _ss) = (f, FunType t $ map (\ (ADecl t _) -> t) args)
   -- Check for duplicate function definitions.
-  -- TODO!
 
   -- Prepare the initial state.
   let st = undefined -- St [] $ error "no return type set"
@@ -81,7 +80,6 @@ checkProgram (PDefs defs) dups = do
   unless (dups) $ throwError "dup"
   unless (length defs > 0) $ throwError "Empty program not allowed"
   mapM_ checkDef defs
-  -- TODO: checkMain
 
 -- | Check a single function definition.
 checkDef :: Def -> Check ()
@@ -89,8 +87,12 @@ checkDef (DFun t f args ss) = do
   let mainArgs = case f of
         (Id "main") -> length args
         _ -> 0
+  let mainStms = case f of 
+        (Id "main") -> length ss
+        _ -> 1
   unless (mainArgs == 0) $ throwError "No args allowed in main"
-  unless (length ss > 0) $ throwError "No function body"
+  unless (mainStms > 0) $ throwError "No function body in main"
+
   -- Set initial context and return type.
   put $ St [Map.empty] t
   -- Add function parameters to the context.
@@ -120,8 +122,11 @@ checkStm = \case
       then return ()
       else throwError $ "Wrong return type"
   SWhile e s -> do
+    cxt <- gets stCxt
+    modifyCxt $ const (Map.empty:cxt)
     checkExp e Type_bool
     checkStm s
+    modifyCxt $ const cxt
   SBlock ss -> do
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
@@ -132,8 +137,11 @@ checkStm = \case
     cxt <- gets stCxt
     modifyCxt $ const (Map.empty:cxt)
     checkStm s1
+    modifyCxt $ const cxt
+    modifyCxt $ const (Map.empty:cxt)
     checkStm s2
-  s -> throwError $ "Bad statement"
+    modifyCxt $ const cxt
+  --s -> throwError $ "Bad statement"
 
 -- | Infer the type of an expression.
 inferExp :: Exp -> Check Type
@@ -173,11 +181,14 @@ inferExp = \case
   EGt e1 e2   -> compareSimilarNumType e1 e2
   ELtEq e1 e2 -> compareSimilarNumType e1 e2
   EGtEq e1 e2 -> compareSimilarNumType e1 e2
-  EEq e1 e2   -> compareSimilarNumType e1 e2
-  ENEq e1 e2  -> compareSimilarNumType e1 e2
+  EEq e1 e2   -> compareSimilarType e1 e2
+  ENEq e1 e2  -> compareSimilarType e1 e2
   EAnd e1 e2  -> compareSimilarType e1 e2
   EOr e1 e2   -> compareSimilarType e1 e2
-  e -> throwError $ "Bad expression"
+  EAss i e    -> do 
+    t1 <- lookupVar i
+    t2 <- inferExp e
+    if t1 == t2 then return t1 else throwError (show i ++ " not declared as " ++ show t2)
   where
     multTypes e1 e2 = do
       t1 <- inferExp e1
