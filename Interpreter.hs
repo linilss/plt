@@ -62,11 +62,11 @@ interpret (PDefs defs) = do
 -- | Execute statements from left to right.
 
 evalStms :: [Stm] -> Eval Val
-evalStms []  =  do 
+evalStms []  =  do
   return VVoid
 evalStms  (s:ss) = do
-  v <- evalStm s 
-  case v of 
+  v <- evalStm s
+  case v of
     VVoid -> evalStms ss
     _     -> return v
 
@@ -84,10 +84,10 @@ evalStm s0 = case s0 of
   SInit t x e -> do
     v <- evalExp e
     newVar x v
-    return VVoid 
+    return VVoid
   SExp e -> do
     evalExp e
-    return VVoid 
+    return VVoid
   SWhile e s -> do
     enterNewBlock
     v <- evalExp e
@@ -108,15 +108,15 @@ evalStm s0 = case s0 of
     --  liftIO $ putStrLn $ show v
     exitBlock
     return v
-  SIfElse e s1 s2 -> do 
-    v <- evalExp e 
+  SIfElse e s1 s2 -> do
+    v <- evalExp e
     enterNewBlock
     case v of
-      (VBool True)  -> do 
+      (VBool True)  -> do
               v <- evalStms [s1]
               exitBlock
               return v
-      (VBool False) -> do 
+      (VBool False) -> do
               v <- evalStms [s2]
               exitBlock
               return v
@@ -131,7 +131,7 @@ evalStm s0 = case s0 of
     exitBlock = do
       env <- get
       let oldEnv = drop 1 env
-      put oldEnv 
+      put oldEnv
 
 evalExp :: Exp -> Eval Val
 evalExp = \case
@@ -153,7 +153,7 @@ evalExp = \case
       (Id "readInt") -> do
         i <- liftIO $ getLine
         return (VInt (read i))
-      (Id "readDouble") -> do   
+      (Id "readDouble") -> do
         d <- liftIO $ getLine
         return $ VDouble $ read d
       (Id i) -> do
@@ -165,7 +165,7 @@ evalExp = \case
             vals <- evalExps es x
             enterNewBlock
             newVars ids vals
-            
+
             val <- evalStms stms
             exitBlock
             return val
@@ -189,7 +189,7 @@ evalExp = \case
           newVar id  v
 
         newVars (id:ids) (v:vals) = do
-          newVar id v 
+          newVar id v
           newVars ids vals
 
         enterNewBlock = do
@@ -220,28 +220,28 @@ evalExp = \case
   EGtEq e1 e2   -> cmp (>=) e1 e2
   EEq   e1 e2   -> cmp (==) e1 e2
   ENEq  e1 e2   -> cmp (/=) e1 e2
-  EPostIncr id   -> do 
+  EPostIncr id   -> do
       val <- lookupVar id
       updateVar id (incr val)
-      return $ case val of 
+      return $ case val of
         (VInt i) -> (VInt i)
         (VDouble d) -> (VDouble d)
-  EPreIncr id    -> do 
+  EPreIncr id    -> do
       val <- lookupVar id
       updateVar id (incr val)
-      return $ case val of 
+      return $ case val of
         (VInt i) -> (VInt (i+1))
-        (VDouble d) -> (VDouble (d+1))     
+        (VDouble d) -> (VDouble (d+1))
   EPostDecr id -> do
       val <- lookupVar id
       updateVar id (decr val)
-      return $ case val of 
+      return $ case val of
         (VInt i) -> (VInt (i))
         (VDouble d) -> (VDouble (d))
-  EPreDecr id  -> do 
+  EPreDecr id  -> do
       val <- lookupVar id
       updateVar id (decr val)
-      return $ case val of 
+      return $ case val of
         (VInt i) -> (VInt (i-1))
         (VDouble d) -> (VDouble (d-1))
   ETimes e1 e2  -> do
@@ -287,7 +287,7 @@ evalExp = \case
    --   modify $ \case
    --     bs -> [Map.adjust (\x -> v) i b | b <- bs]
 
---      do 
+--      do
 --      bs <- get
 --      let newB = checkAndUpdate i v bs []
 --      return ()
@@ -296,14 +296,14 @@ evalExp = \case
 
 
 checkIfReturn :: [Stm] -> Stm
-checkIfReturn (s:[]) = s 
-checkIfReturn (s:ss) = do 
-    case s of 
+checkIfReturn (s:[]) = s
+checkIfReturn (s:ss) = do
+    case s of
         (SReturn e) -> s
         _           -> checkIfReturn ss
 
 checkTilReturn :: [Stm] -> [Stm]
-checkTilReturn ss = do 
+checkTilReturn ss = do
   let sss = reverse $ checkTilReturn' $ reverse ss
   case sss of
     [] -> ss
@@ -311,8 +311,8 @@ checkTilReturn ss = do
 
 checkTilReturn' :: [Stm] -> [Stm]
 checkTilReturn' [] = []
-checkTilReturn' (s:ss) = do 
-    case s of 
+checkTilReturn' (s:ss) = do
+    case s of
         (SReturn e) -> (s:ss)
         _           -> checkTilReturn' ss
 -- * Variable handling
@@ -338,7 +338,7 @@ newVar x v = modify $ \case
             Just val -> error $ "Variable already exists"
             Nothing -> Map.insert x v b : bs
 
---NOTE!! UpdateVar poss not correct, can be the reason why good17 fails. 
+--NOTE!! UpdateVar poss not correct, can be the reason why good17 fails.
 updateVar :: Id -> Val -> Eval ()
 updateVar i v = do
   modify $ \case
