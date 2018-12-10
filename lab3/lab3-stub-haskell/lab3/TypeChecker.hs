@@ -22,7 +22,7 @@ import CPP.ErrM  (Err(Ok,Bad))
 
 -- | The signature maps function identifiers to the list of their parameters and the return type.
 type Sig     = Map Id FunType
-data FunType = FunType { funRet :: Type, funPars :: [Type] } deriving (Show)
+data FunType = FunType { funRet :: Type, funPars :: [Type] }
 
 -- | The state consists of the local context and the return type of the function.
 data St = St

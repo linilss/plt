@@ -29,8 +29,10 @@ data St = St
 type Sig = Map Id Fun
 
 -- | Function names bundled with their type
-data Fun = Fun { funId :: Id, funFunType :: FunType }
-  deriving Show
+data Fun = Fun  {   funId :: Id
+                  , funFunType :: FunType 
+                } deriving (Show)
+
 
 type Cxt = [Block]
 type Block = [(Id, Type)]
@@ -279,3 +281,28 @@ grabOutput m = do
 
 funType :: Def -> FunType
 funType (DFun t _ args _) = FunType t $ map (\ (ADecl t' _) -> t') args
+
+
+
+
+toJVM :: Fun -> [Char]
+toJVM f = "asd"
+
+newVar:: Id -> Type -> Compile ()
+newVar i t = modify $ \case
+  b:bs -> case Map.lookup x b of
+            Just val -> error $ "Variable already exists"
+            Nothing -> Map.insert x v b : bs
+
+lookupVar:: Id -> Compile ()
+lookupVar i = do
+  b <- get
+  case catMaybes $ map (Map.lookup x) b of
+    [] -> error $ show x ++ " variable not declared in scope"
+    (t:ts) -> return t
+
+blank :: Compile
+blank = error $ "blank NYI"
+
+inNewBlock :: Compile -> Compile
+inNewBlock = error $ "inNewBlock NYI"
