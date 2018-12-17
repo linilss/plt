@@ -348,7 +348,7 @@ emit c = do
   case c of
     Store _  -> modStack (-1)
     Load  _  -> modStack (1)
-    IConst _  -> modStack (1)
+    IConst _ -> modStack (1)
     Dup      -> modStack (1)
     Pop      -> modStack (-1)
     Return   -> modStack (-1)
@@ -357,7 +357,7 @@ emit c = do
     Sub      -> modStack (-1)
     Mul      -> modStack (-1)
     Div      -> modStack (-1)
-    IfZ _ _   -> modStack (-1)
+    IfZ _ _  -> modStack (-1)
     IfS _ _  -> do
       modStack (-1)
       modStack (-1)
@@ -381,6 +381,14 @@ grabOutput m = do
 funType :: Def -> FunType
 funType (DFun t _ args _) = FunType t $ map (\ (ADecl t' _) -> t') args
 
+modStack :: Int -> Compile ()
+modStack n = do
+  new <- gets currentStack
+  modify $ \ st -> st { currentStack = new+n }
+  old <- gets limitStack
+  when (new+n > old) $
+    modify $ \ st -> st { limitStack = new+n }
+
 instance ToJVM Code where
   toJVM c = case c of
     Store n   -> "istore " ++ show n
@@ -400,13 +408,6 @@ instance ToJVM Code where
     IfS s l   -> "if_icmp" ++ s ++ " " ++ toJVM l
 
 
-modStack :: Int -> Compile ()
-modStack n = do
-  new <- gets currentStack
-  modify $ \ st -> st { currentStack = new+n }
-  old <- gets limitStack
-  when (new+n > old) $
-    modify $ \ st -> st { limitStack = new+n }
 
 class ToJVM a where
   toJVM :: a -> String
