@@ -76,10 +76,15 @@ compile name prg@(PDefs defs) = do
   writeFile jasminFile $ unlines w
   callProcess "jasmin" ["-d", takeDirectory jasminFile, jasminFile]
   where
-    sig     = Map.fromList $ builtin ++ map (\ def@(DFun _ f@(Id x) _ _ ) ->
-      (f, Fun (Id $ takeFileName name ++ "/" ++ x) $ funType def)) defs
+    sigEntry def@(DFun _ f@(Id x) _ _ ) = (f, Fun (Id $ takeFileName name ++ "/" ++ x) $ funType def)
+    sig     = Map.fromList $ builtin ++ map sigEntry defs
     w = snd $ evalRWS (compileProgram name prg) sig initSt
     jasminFile   = addExtension name "j"
+
+--(\ def@(DFun _ f@(Id x) _ _ ) -> (f, Fun (Id $ takeFileName name ++ "/" ++ x) $ funType def))
+--(f, Fun (Id $ name ++ "/" ++ x) $ funType def)
+
+
 
 compileProgram :: String -> Program -> Compile ()
 compileProgram name (PDefs defs) = do
