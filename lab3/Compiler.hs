@@ -10,7 +10,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.RWS
 
---import Data.Maybe
+import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -47,9 +47,9 @@ initSt :: St
 initSt = St
   { cxt           = [Map.empty]
   , limitLocals   = 100
+  , limitStack    = 100
   , currentStack  = 0
   , currentAddr   = 0
-  , limitStack    = 0
   , nextLabel     = L 0
   }
 
@@ -73,14 +73,13 @@ compile
   -> Program -- ^ Type-annotated program.
   -> IO ()  -- ^ Generated jasmin source file content.
 compile name prg@(PDefs defs) = do
-  let sig = Map.fromList $
-        builtin ++
-        map (\ def@(DFun _ f@(Id x) _ _ ) -> (f, Fun (Id $ takeFileName name ++ "/" ++ x) $ funType def)) defs
-      ((), w) = evalRWS (compileProgram name prg) sig initSt
-  -- Write to .j file and call jasmin
-      jfile = addExtension name "j"
-  writeFile jfile $ unlines w
-  callProcess "jasmin" ["-d", takeDirectory jfile, jfile]
+  writeFile jasminFile $ unlines w
+  callProcess "jasmin" ["-d", takeDirectory jasminFile, jasminFile]
+  where
+    sig     = Map.fromList $ builtin ++ map (\ def@(DFun _ f@(Id x) _ _ ) ->
+      (f, Fun (Id $ takeFileName name ++ "/" ++ x) $ funType def)) defs
+    w = snd $ evalRWS (compileProgram name prg) sig initSt
+    jasminFile   = addExtension name "j"
 
 compileProgram :: String -> Program -> Compile ()
 compileProgram name (PDefs defs) = do
@@ -118,7 +117,7 @@ compileProgram name (PDefs defs) = do
 compileFun :: Def -> Compile ()
 compileFun def@(DFun t f args ss) = do
   -- function header
-  tell [ "", ".method public static " ++ toJVM (Fun f $ funType def) ]
+  tell [ "", ".method public static " ++ toJVMF (Fun f $ funType def) ]
 
   -- prepare environment
   lab <- gets nextLabel
@@ -207,13 +206,11 @@ compileStm t s = do
 
     where
       newBlock = do
-        st <- get
-        let cs = cxt st
+        cs <- gets cxt
         modify $ \ st' -> st' {cxt = Map.empty:cs}
 
       exitBlock = do
-        st <- get
-        let (_:cs) = cxt st
+        (_:cs) <- gets cxt
         modify $ \ st' -> st' {cxt = cs}
 
 
@@ -268,18 +265,18 @@ compileExp = \case
       emit (Store a)
       emit (Load a)
 
-    ETimes e1 e2 -> arithOp e1 e2 (Mul)
-    EDiv e1 e2 -> arithOp e1 e2 (Div)
-    EPlus e1 e2 -> arithOp e1 e2 (Add)
-    EMinus e1 e2 -> arithOp e1 e2 (Sub)
-    ELt e1 e2 -> compareExp e1 e2 "lt"
-    EGt e1 e2 -> compareExp e1 e2 "gt"
-    ELtEq e1 e2 -> compareExp e1 e2 "le"
-    EGtEq e1 e2 -> compareExp e1 e2 "ge"
-    EEq e1 e2 -> compareExp e1 e2 "eq"
-    ENEq e1 e2 -> compareExp e1 e2 "ne"
-    EAnd e1 e2 -> binExp e1 e2 "eq"
-    EOr e1 e2 -> binExp e1 e2 "ne"
+    ETimes e1 e2  -> arithOp e1 e2 (Mul)
+    EDiv e1 e2    -> arithOp e1 e2 (Div)
+    EPlus e1 e2   -> arithOp e1 e2 (Add)
+    EMinus e1 e2  -> arithOp e1 e2 (Sub)
+    ELt e1 e2     -> compareExp e1 e2 "lt"
+    EGt e1 e2     -> compareExp e1 e2 "gt"
+    ELtEq e1 e2   -> compareExp e1 e2 "le"
+    EGtEq e1 e2   -> compareExp e1 e2 "ge"
+    EEq e1 e2     -> compareExp e1 e2 "eq"
+    ENEq e1 e2    -> compareExp e1 e2 "ne"
+    EAnd e1 e2    -> binExp e1 e2 "eq"
+    EOr e1 e2     -> binExp e1 e2 "ne"
 
     EAss x e -> do
       compileExp e
@@ -308,11 +305,11 @@ compileExp = \case
         case s of
           "eq" -> emit (IConst 0)
           "ne" -> emit (IConst 1)
-          _    -> fail "Only eq or ne is allowed"
+          _    -> fail "Only eq or ne i"
         compileExp e1
         emit (IfZ s end)
         compileExp e2
-        emit (IfZ s end)
+        emit (IfZ s end) >> emit (Pop)
         case s of
           "eq" -> emit (IConst 1)
           "ne" -> emit (IConst 0)
@@ -363,12 +360,13 @@ emit c = do
       modStack (-1)
     _        -> return ()
 
+-- * Labels
+
 newLabel :: Compile Label
 newLabel = do
-  s <- get
-  let (L l) = nextLabel s
-  modify $ \ s' -> s' {nextLabel = (L (l + 1))}
-  return (L l)
+  l <- gets nextLabel
+  modify $ \ st -> st { nextLabel = succ l }
+  return $ l
 
 grabOutput :: Compile () -> Compile Output
 grabOutput m = do
@@ -384,49 +382,44 @@ funType (DFun t _ args _) = FunType t $ map (\ (ADecl t' _) -> t') args
 modStack :: Int -> Compile ()
 modStack n = do
   new <- gets currentStack
-  modify $ \ st -> st { currentStack = new+n }
   old <- gets limitStack
+  modify $ \ st -> st { currentStack = new+n }
   when (new+n > old) $
     modify $ \ st -> st { limitStack = new+n }
 
-instance ToJVM Code where
-  toJVM c = case c of
-    Store n   -> "istore " ++ show n
-    Load  n   -> "iload " ++ show n
-    Dup       -> "dup"
-    Pop       -> "pop"
-    Return    -> "ireturn"
-    Call f    -> "invokestatic " ++ toJVM f
-    IConst i   -> "ldc " ++ show i
-    Add       -> "iadd"
-    Sub       -> "isub"
-    Mul       -> "imul"
-    Div       -> "idiv"
-    Label l    -> toJVM l ++ ":"
-    Goto l    -> "goto " ++ toJVM l
-    IfZ s l    -> "if" ++ s ++ " " ++ toJVM l
-    IfS s l   -> "if_icmp" ++ s ++ " " ++ toJVM l
 
+toJVM :: Code -> String
+toJVM c = case c of
+  Store n   -> "istore " ++ show n
+  Load  n   -> "iload " ++ show n
+  Dup       -> "dup"
+  Pop       -> "pop"
+  Return    -> "ireturn"
+  Call f    -> "invokestatic " ++ toJVMF f
+  IConst i   -> "ldc " ++ show i
+  Add       -> "iadd"
+  Sub       -> "isub"
+  Mul       -> "imul"
+  Div       -> "idiv"
+  Label l    -> toJVML l ++ ":"
+  Goto l    -> "goto " ++ toJVML l
+  IfZ s l    -> "if" ++ s ++ " " ++ toJVML l
+  IfS s l   -> "if_icmp" ++ s ++ " " ++ toJVML l
+  where
+    toJVML (L l) = "L" ++ show l
 
+toJVMT :: Type -> String
+toJVMT t = case t of
+  Type_int    -> "I"
+  Type_void   -> "V"
+  Type_bool   -> "Z"
+  Type_double -> "D"
 
-class ToJVM a where
-  toJVM :: a -> String
+toJVMFT :: FunType -> String
+toJVMFT (FunType t ts) = "(" ++ (toJVMT =<< ts) ++ ")" ++ toJVMT t
 
-instance ToJVM Type where
-  toJVM t = case t of
-    Type_int    -> "I"
-    Type_void   -> "V"
-    Type_bool   -> "Z"
-    Type_double -> "D"
-
-instance ToJVM FunType where
-  toJVM (FunType t ts) = "(" ++ (toJVM =<< ts) ++ ")" ++ toJVM t
-
-instance ToJVM Fun where
-  toJVM (Fun (Id f) t) = f ++ toJVM t
-
-instance ToJVM Label where
-  toJVM (L l) = "L" ++ show l
+toJVMF :: Fun -> String
+toJVMF (Fun (Id f) t) = f ++ toJVMFT t
 
 newVar :: Id -> Compile ()
 newVar x = do
@@ -438,13 +431,7 @@ newVar x = do
 
 lookupVar :: Id -> Compile Addr
 lookupVar x = do
-  s <- get
-  let cs = cxt s
-  lookupVar' x cs
-
-lookupVar' :: Id -> Cxt -> Compile Addr
-lookupVar' x [] = fail $ "could not find variable: " ++ show x
-lookupVar' x (c:cs) = do
-  case Map.lookup x c of
-    Just a -> return a
-    Nothing -> lookupVar' x cs
+  cs <- gets cxt
+  case catMaybes $ map (Map.lookup x) cs of
+    [] -> error $ show x ++ " variable not declared in scope"
+    (a:_) -> return a
