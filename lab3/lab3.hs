@@ -1,61 +1,38 @@
--- | lab3: Compiler from C-- to JAVA .class file.
-
 import System.Environment (getArgs)
-import System.Exit        (exitFailure)
-import System.FilePath    (dropExtension, replaceExtension, splitFileName)
-import System.Process     (callProcess)
+import System.Exit (exitFailure)
+import System.FilePath (dropExtension, takeFileName)
 
-import CPP.Par                  (pProgram, myLexer)
-import CPP.ErrM                 (Err (Bad, Ok))
-import qualified CPP.Abs   as A (Program)
-import qualified Annotated as T (Program)
-import qualified Compiler  as C (compile)
-import TypeChecker              (typecheck)
+import CPP.Lex
+import CPP.Par
+import CPP.ErrM
 
--- | Main: read file passed by only command line argument and run compiler pipeline.
+import TypeChecker
+import Compiler
 
-main :: IO ()
-main = do
-  args <- getArgs
-  case args of
-    [file] -> readFile file >>= parse >>= check >>= compile file
-    _      -> do
-      putStrLn "Usage: lab3 <SourceFile>"
-      exitFailure
+-- | Parse, type check, and compile a program given by the @String@.
 
--- | Parse file contents into AST.
-
-parse :: String -> IO A.Program
-parse s =
+check :: FilePath -> String -> IO ()
+check file s = do
   case pProgram (myLexer s) of
     Bad err  -> do
       putStrLn "SYNTAX ERROR"
       putStrLn err
       exitFailure
-    Ok  tree -> return tree
+    Ok  tree -> do
+      case typecheck tree of
+        Bad err -> do
+          putStrLn "TYPE ERROR"
+          putStrLn err
+          exitFailure
+        Ok _ -> compile file tree
 
--- | Type check and return a type-annotated program.
+-- | Main: read file passed by only command line argument and call 'check'.
 
-check :: A.Program -> IO T.Program
-check tree =
-  case typecheck tree of
-    Bad err -> do
-      putStrLn "TYPE ERROR"
-      putStrLn err
+main :: IO ()
+main = do
+  args <- getArgs
+  case args of
+    [file] -> check (dropExtension file) =<< readFile file
+    _      -> do
+      putStrLn "Usage: lab3 <SourceFile>"
       exitFailure
-    Ok tree' -> return tree'
-
--- | Compile and produce a .class file in the same directory as the source file.
-
-compile :: FilePath -> T.Program -> IO ()
-compile file tree = do
-  -- The class name is the base name of the file.
-  let (dir, name) = splitFileName file
-  let classname   = dropExtension name
-  -- Compiler produces content of .j file
-  let jtext       = C.compile classname tree
-  let jfile       = replaceExtension file "j"
-  writeFile jfile jtext
-  -- Call jasmin, but ask it to place .class file in dir
-  -- rather than in the current directory.
-  callProcess "jasmin" ["-d", dir, jfile]
