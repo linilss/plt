@@ -2,32 +2,21 @@
 
 .PHONY : lab3 test testsuite
 
-testcore=fib
-#prime
-#good03
-#big_stack
-#double_comparison
-# testcore=five_plus_five
-# scopes_reuse_name
-# uninitialized_var
-# if_else_return
+testcore=test
 
-default : lab3
+default : test
 
 # cannot be default goal, will loop forever
 all : test testsuite
 
-test : test/$(testcore).class test/Runtime.class
-	cd test; java $(testcore)
-
-%.class : %.cc lab3
+test : test/$(testcore).cc lab3 Runtime.class
 	./lab3 $<
 
 testsuite : lab3 Runtime.class
 	./run-testsuite.sh
 
-lab3 : lab3.hs TypeChecker.hs Compiler.hs CPP/Test Ann/Abs.hs
-	ghc --make -Wno-deprecated-flags lab3.hs -o lab3
+lab3 : lab3.hs TypeChecker.hs Compiler.hs CPP/Test CPP/Abs.hs
+	ghc --make lab3.hs -o lab3
 
 CPP/Test.hs CPP/Lex.x CPP/Layout.hs CPP/Par.y : CPP.cf
 	bnfc --haskell -d $<
@@ -40,21 +29,6 @@ CPP/Lex.hs: CPP/Lex.x
 
 CPP/Test: CPP/Test.hs CPP/Par.hs CPP/Lex.hs
 	ghc --make $< -o $@
-
-Ann/Abs.hs Ann/Test.hs Ann/Lex.x Ann/Layout.hs Ann/Par.y : Ann.cf
-	bnfc --haskell -d $<
-
-Ann/Par.hs: Ann/Par.y
-	happy -gcai $<
-
-Ann/Lex.hs: Ann/Lex.x
-	alex -g $<
-
-Ann/Test: Ann/Test.hs Ann/Par.hs Ann/Lex.hs
-	ghc --make $< -o $@
-
-test/Runtime.class : Runtime.class
-	cp -p $< $@
 
 %.class : %.java
 	javac $<

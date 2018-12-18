@@ -11,7 +11,7 @@ import TypeChecker
 import Compiler
 
 check :: Program -> IO Program
-check tree = 
+check tree =
   case typecheck tree of
     Bad err -> do
       putStrLn "TYPE ERROR"
