@@ -111,7 +111,8 @@ eval cxt e = case e of
         ve <- eval cxt e
         VClos x' f' env <- eval cxt f
         let cxt' = cxt { cxtEnv = Map.insert x' (Val ve) (cxtEnv cxt) }
-        eval  cxt' f'
+            cxt2 = newVar cxt x' ve
+        eval  cxt2 f'
 
   EAdd e e' -> do
     VInt i1 <- eval cxt e
