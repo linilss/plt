@@ -5,7 +5,7 @@ lab4 : lab4.hs Interpreter.hs FUN/Test
 
 test : test/const.hs
 # test/dont-bind-too-eagerly.cc # scopes-reuse-name.cc # while-scope.cc  # if-scope.cc  # while-block.cc
-	./lab4 -n $<
+	./lab4 -v $<
 
 FUN/Test.hs FUN/Lex.x FUN/Layout.hs FUN/Par.y : FUN.cf
 	bnfc --haskell -d $<
