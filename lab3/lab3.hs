@@ -5,34 +5,38 @@ import System.FilePath (dropExtension, takeFileName)
 import CPP.Lex
 import CPP.Par
 import CPP.ErrM
+import CPP.Abs
 
 import TypeChecker
 import Compiler
 
--- | Parse, type check, and compile a program given by the @String@.
+check :: Program -> IO Program
+check tree =
+  case typecheck tree of
+    Bad err -> do
+      putStrLn "TYPE ERROR"
+      putStrLn err
+      exitFailure
+    Ok _ -> return tree
 
-check :: FilePath -> String -> IO ()
-check file s = do
+parse :: String -> IO Program
+parse s = do
   case pProgram (myLexer s) of
     Bad err  -> do
       putStrLn "SYNTAX ERROR"
       putStrLn err
       exitFailure
-    Ok  tree -> do
-      case typecheck tree of
-        Bad err -> do
-          putStrLn "TYPE ERROR"
-          putStrLn err
-          exitFailure
-        Ok _ -> compile file tree
+    Ok  tree -> return tree
 
--- | Main: read file passed by only command line argument and call 'check'.
+compileProg :: FilePath -> Program -> IO ()
+compileProg file tree = do
+  compile file tree
 
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [file] -> check (dropExtension file) =<< readFile file
+    [file] -> readFile file >>= parse >>= check >>= compileProg (dropExtension file)
     _      -> do
       putStrLn "Usage: lab3 <SourceFile>"
       exitFailure
