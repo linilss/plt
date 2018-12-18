@@ -59,7 +59,6 @@ interpret (PDefs defs) = do
   -- Run the statements in the initial environment.
   () <$ runExceptT (evalStateT (runReaderT (evalStms $ ss) sig) emptyEnv)
 
--- | Execute statements from left to right.
 
 evalStms :: [Stm] -> Eval Val
 evalStms []  =  do
