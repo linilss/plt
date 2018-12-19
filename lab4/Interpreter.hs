@@ -94,8 +94,16 @@ eval e = case e of
 
   EVar x    -> do
     env <- asks cxtEnv
+    str <- asks cxtStrategy
     case Map.lookup x env of
-      Just v -> evalEntry v
+      Just v -> do
+        case str of
+          CallByValue -> evalEntry v
+          CallByName -> do
+            case v of
+              Val (VInt n) -> evalEntry v
+              Val (VClos x e env) -> do
+                local (\cxt -> cxt { cxtEnv = env } ) $ eval e
       Nothing -> do
         sig <- asks cxtSig
         case Map.lookup x sig of
@@ -109,25 +117,31 @@ eval e = case e of
 
   EApp f a  -> do
     vf <- eval f
-    va <- eval a
     case vf of
       VInt i -> todo2
       VClos x f' env -> do
-        local (\cxt -> cxt { cxtEnv = (Map.insert x (Val va) env) } ) $ eval f'
+        str <- asks cxtStrategy
+        case str of
+          CallByValue -> do
+            va <- eval a
+            local (\cxt -> cxt { cxtEnv = (Map.insert x (Val va) env) } ) $ eval f'
+          CallByName -> do
+            v <- eval $ EAbs x a
+            local (\cxt -> cxt { cxtEnv = (Map.insert x (Val v) env) } ) $ eval f'
 
   EAdd e e' -> do
     e1  <- eval e
     e2  <- eval e'
     case (e1, e2) of
       (VInt i, VInt i') -> return (VInt (i + i'))
-      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
+      _                 -> error $ "Not ints " ++ show e ++ " , " ++ show e'
 
   ESub e e' -> do
     e1  <- eval e
     e2  <- eval e'
     case (e1, e2) of
       (VInt i, VInt i') -> return (VInt (i - i'))
-      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
+      _                 -> error $ "Not ints " ++ show e ++ " , " ++ show e'
 
   ELt  e e' -> do
     e1  <- eval e
@@ -137,7 +151,7 @@ eval e = case e of
         case i<i' of
           True -> return (VInt 1)
           False -> return (VInt 0)
-      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
+      _                 -> error $ "Not ints " ++ show e ++ " , " ++ show e'
 
   EIf c t e -> do
     b <- eval c

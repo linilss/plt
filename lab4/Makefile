@@ -5,7 +5,7 @@ lab4 : lab4.hs Interpreter.hs FUN/Test
 
 test : test/const.hs
 # test/dont-bind-too-eagerly.cc # scopes-reuse-name.cc # while-scope.cc  # if-scope.cc  # while-block.cc
-	./lab4 -v $<
+	./lab4 -n $<
 
 FUN/Test.hs FUN/Lex.x FUN/Layout.hs FUN/Par.y : FUN.cf
 	bnfc --haskell -d $<
@@ -22,7 +22,7 @@ FUN/Test: FUN/Test.hs FUN/Par.hs FUN/Lex.hs
 	alex -g FUN/LexFUN.x
 	ghc --make FUN/TestFUN.hs -o FUN/TestFUN
 
-default: test
+default: all
 
 clean:
 	-rm -f FUN/*.log FUN/*.aux FUN/*.hi FUN/*.o FUN/*.dvi
