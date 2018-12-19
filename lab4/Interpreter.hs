@@ -36,8 +36,8 @@ interpret strategy (Prog defs (DMain mainExp)) = do
         }
 
   -- Run the interpreter.
-  -- v <- eval mainExp `runReaderT` cxt  -- with Reader monad
-  v <- eval cxt mainExp  -- without Reader monad
+  v <- eval mainExp `runReaderT` cxt  -- with Reader monad
+  --v <- eval cxt mainExp  -- without Reader monad
 
   -- Inspect the result.
   case v of
@@ -46,11 +46,17 @@ interpret strategy (Prog defs (DMain mainExp)) = do
 
 -- * Data structures for the interpreter.
 
+-- | Values.
+
+data Value
+  = VInt  Integer
+  | VClos Ident Exp Env
+
 -- | Context.
 
 data Cxt = Cxt
   { cxtStrategy :: Strategy  -- ^ Evaluation strategy (fixed).
-  , cxtSig      :: Sig       -- ^ Binds func idents to expression.
+  , cxtSig      :: Sig       -- ^ Binds function identifiers to expression.
   , cxtEnv      :: Env       -- ^ Binds local variables to values.
   }
 
@@ -64,12 +70,6 @@ data Entry
   = Clos Exp Env  -- ^ For call-by-name.
   | Val  Value    -- ^ For call-by-value.
 
--- | Values.
-
-data Value
-  = VInt  Integer
-  | VClos Ident Exp Env
-
 type Env = Map Ident Entry
 
 -- | Evaluation monad.
@@ -79,91 +79,74 @@ type Eval = ReaderT Cxt Err
 -- * Interpreter.
 
 todo = error "not yet implemented, TODO!"
-todo2 = error "Well shit"
-todo3 = error "This is good"
+todo2 = error "well shit..."
+todo3 = error "THIS IS GOOD!!!"
 
 -- -- | Evaluation (with reader monad).
 -- eval :: Exp -> Eval Value
 -- eval e = todo
 
 -- | Evaluation.
-eval :: Cxt -> Exp -> Err Value
-eval cxt e = case e of
+eval :: Exp -> Eval Value
+eval e = case e of
 
   EInt i    -> return $ VInt i
 
   EVar x    -> do
-    case Map.lookup x (cxtEnv cxt) of
-      Just v -> evalEntry cxt v
+    env <- asks cxtEnv
+    case Map.lookup x env of
+      Just v -> evalEntry v
       Nothing -> do
-        case Map.lookup x (cxtSig cxt) of
-          Just f -> return $ VClos x f (cxtEnv cxt)
-          Nothing -> error $ "variable not declared: " ++ show x
-    --lookFor cxt x
+        sig <- asks cxtSig
+        case Map.lookup x sig of
+          Just e -> eval e
+          Nothing -> error $ show x ++ " not bound"
 
-  EAbs x e  -> return $ VClos x e (cxtEnv cxt)
+  EAbs x e  -> do
+    env <- asks cxtEnv
+    return $ VClos x e env
 
-  EApp f e  -> do
-    ff <- eval cxt f
-    case ff of
-      VInt i          -> error $ "Eapp for ints..." ++ show f
-      VClos x f env   -> do
-        ve <- eval cxt e
-        VClos x' f' env <- eval cxt f
-        let cxt' = cxt { cxtEnv = Map.insert x' (Val ve) (cxtEnv cxt) }
-            cxt2 = newVar cxt x' ve
-        eval  cxt2 f'
+
+  EApp f a  -> do
+    vf <- eval f
+    va <- eval a
+    case vf of
+      VInt i -> todo2
+      VClos x f' env -> do
+        local (\cxt -> cxt { cxtEnv = (Map.insert x (Val va) env) } ) $ eval f'
 
   EAdd e e' -> do
-    VInt i1 <- eval cxt e
-    VInt i2 <- eval cxt e'
-    eval cxt (EInt (i1+i2))
+    e1  <- eval e
+    e2  <- eval e'
+    case (e1, e2) of
+      (VInt i, VInt i') -> return (VInt (i + i'))
+      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
 
   ESub e e' -> do
-    VInt i1 <- eval cxt e
-    VInt i2 <- eval cxt e'
-    eval cxt (EInt (i1-i2))
+    e1  <- eval e
+    e2  <- eval e'
+    case (e1, e2) of
+      (VInt i, VInt i') -> return (VInt (i - i'))
+      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
 
   ELt  e e' -> do
-    VInt i1 <- eval cxt e
-    VInt i2 <- eval cxt e'
-    case i1<i2 of
-      True -> eval cxt (EInt 1)
-      False -> eval cxt (EInt 0)
+    e1  <- eval e
+    e2  <- eval e'
+    case (e1, e2) of
+      (VInt i, VInt i') -> do
+        case i<i' of
+          True -> return (VInt 1)
+          False -> return (VInt 0)
+      _                 -> error $ "Not ints" ++ show e ++ " , " ++ show e'
 
   EIf c t e -> do
-    VInt b <- eval cxt c
+    b <- eval c
     case b of
-      1 -> eval cxt t
-      0 -> eval cxt e
-
-
-  where
+      VInt 1 -> eval t
+      VInt 0 -> eval e
 
 -- | Evaluation of an environment entry.
 
-evalEntry :: Cxt -> Entry -> Err Value
-evalEntry cxt (Val v)      = return v
-evalEntry cxt (Clos e env) = eval (cxt { cxtEnv = env }) e
-
-lookupVar :: Cxt -> Ident -> Err Value
-lookupVar cxt id = do
-  case Map.lookup id (cxtEnv cxt) of
-      (Just v) -> evalEntry cxt v
-      Nothing  -> error $ "variable not declared in scope " ++ show id
-
-lookupFun :: Cxt -> Ident -> Err Value
-lookupFun cxt id = do
-  case Map.lookup id (cxtSig cxt) of
-    Just v  -> todo3
-    Nothing -> todo2
-
-newVar :: Cxt -> Ident -> Value -> Cxt
-newVar cxt id val = do
-  case Map.lookup id (cxtEnv cxt) of
-    Just v -> error $ "Variable already exists"
-    Nothing  -> Cxt
-              { cxtStrategy = (cxtStrategy cxt)
-              , cxtSig      = (cxtSig cxt)
-              , cxtEnv      = Map.insert id (Val val) (cxtEnv cxt)
-              }
+evalEntry :: Entry -> Eval Value
+evalEntry (Val v)      = return v
+evalEntry (Clos e env) = eval e

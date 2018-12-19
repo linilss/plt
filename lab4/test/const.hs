@@ -1,7 +1,11 @@
---    -- File: good.hs
---
---    mult x y = if y < 1 then 0 else x + mult x (y-1) ;
---    fact     = \x -> if x < 3 then x else mult x (fact (x-1)) ;
-	fac x y = x + 3 ;
-	grow = 1 ;
-    main = print ( fac 1 2) ;
+double x = x + x ;
+twice f x = f (f x) ;
+quadruple = twice double ;
+mainz = twice quadruple 2 ;
+maint = twice (\x -> x + double x) 6 ;
+
+grow x = 1 + grow x ;
+
+first x y = x + 1 ;
+
+main = print (first 4 (grow 4)) ; -- result 5 with -n, loop otherwise
