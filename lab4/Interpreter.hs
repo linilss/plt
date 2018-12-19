@@ -76,16 +76,6 @@ type Env = Map Ident Entry
 
 type Eval = ReaderT Cxt Err
 
--- * Interpreter.
-
-todo = error "not yet implemented, TODO!"
-todo2 = error "well shit..."
-todo3 = error "THIS IS GOOD!!!"
-
--- -- | Evaluation (with reader monad).
--- eval :: Exp -> Eval Value
--- eval e = todo
-
 -- | Evaluation.
 eval :: Exp -> Eval Value
 eval e = case e of
@@ -96,14 +86,15 @@ eval e = case e of
     env <- asks cxtEnv
     str <- asks cxtStrategy
     case Map.lookup x env of
+
       Just v -> do
         case str of
           CallByValue -> evalEntry v
-          CallByName -> do
-            case v of
-              Val (VInt n) -> evalEntry v
-              Val (VClos x e env) -> do
-                local (\cxt -> cxt { cxtEnv = env } ) $ eval e
+          CallByName -> case v of
+            Val (VInt n) -> evalEntry v
+            Val (VClos x e env) -> do
+              local (\cxt -> cxt { cxtEnv = env } ) $ eval e
+
       Nothing -> do
         sig <- asks cxtSig
         case Map.lookup x sig of
@@ -116,20 +107,23 @@ eval e = case e of
     env <- asks cxtEnv
     return $ VClos x e env
 
-
   EApp f a  -> do
-    vf <- eval f
-    case vf of
-      VInt i -> todo2
+    ef <- eval f
+    case ef of
+      VInt i -> error $ "Cannot call an Integer: " ++ show f
       VClos x f' env -> do
         str <- asks cxtStrategy
         case str of
+
           CallByValue -> do
-            va <- eval a
-            local (\cxt -> cxt { cxtEnv = (Map.insert x (Val va) env) } ) $ eval f'
+            ea <- eval a
+            let env' = (Map.insert x (Val ea) env)
+            local (\cxt -> cxt { cxtEnv = env' } ) $ eval f'
+
           CallByName -> do
-            v <- eval $ EAbs x a
-            local (\cxt -> cxt { cxtEnv = (Map.insert x (Val v) env) } ) $ eval f'
+            eaa <- eval $ EAbs x a
+            let env' = (Map.insert x (Val eaa) env)
+            local (\cxt -> cxt { cxtEnv = env' } ) $ eval f'
 
   EAdd e e' -> do
     e1  <- eval e
@@ -150,9 +144,9 @@ eval e = case e of
     e2  <- eval e'
     case (e1, e2) of
       (VInt i, VInt i') -> do
-        case i<i' of
-          True -> return (VInt 1)
-          False -> return (VInt 0)
+        if i < i'
+          then return (VInt 1)
+          else return (VInt 0)
       _                 -> error $ "Not ints " ++ show e ++ " , " ++ show e'
 
   EIf c t e -> do
@@ -165,4 +159,3 @@ eval e = case e of
 
 evalEntry :: Entry -> Eval Value
 evalEntry (Val v)      = return v
-evalEntry (Clos e env) = eval e

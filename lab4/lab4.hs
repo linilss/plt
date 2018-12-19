@@ -1,37 +1,67 @@
-import Control.Monad.State
+import Control.Monad        (forM_, when)
+import Control.Monad.State  (StateT, execStateT, gets, modify, liftIO)
+import Control.Monad.Except (runExcept)
 
-import System.IO
-import System.FilePath.Posix
-import System.Environment
-import System.Exit
+import System.IO            (hPutStrLn, readFile, stderr)
+import System.Environment   (getArgs)
+import System.Exit          (exitFailure, exitSuccess)
 
-import FUN.Lex
-import FUN.Par
-import FUN.ErrM
+import FUN.Abs              (Program)
+import FUN.Par              (pProgram, myLexer)
+import FUN.Print            (printTree)
+import FUN.ErrM             (Err(..))
 
-import Interpreter
+import Interpreter          (Strategy(..), interpret)
+
+-- | Entry point.
+
+main :: IO ()
+main = do
+  args <- getArgs
+  CmdLine strategy file <- mapM_ parseArg args `execStateT` initCmdLine
+  when (null file) usage
+  run strategy =<< readFile file
+
+-- | Main pipeline.
 
 run :: Strategy -> String -> IO ()
-run strategy s = case pProgram (myLexer s) of
+run strategy s = eval strategy =<< parse s
+
+-- | Parse.
+
+parse :: String -> IO Program
+parse s = case pProgram (myLexer s) of
   Bad err -> do
     putStrLn "SYNTAX ERROR"
     putStrLn err
     exitFailure
-  Ok prg -> do
-      case interpret strategy prg of
-        Bad err -> do
-          putStrLn "INTERPRETER ERROR"
-          putStrLn err
-          exitFailure
-        Ok i -> do
-          putStrLn $ show i
-          hPutStrLn stderr "OK"
-          exitSuccess
+  Ok prg -> return prg
+
+
+-- | Interpret in call-by-value or call-by-name.
+
+eval :: Strategy -> Program -> IO ()
+eval strategy prg = do
+  case interpret strategy prg of
+    Bad err -> do
+      putStrLn "INTERPRETER ERROR"
+      putStrLn err
+      exitFailure
+    Ok i -> do
+      putStrLn $ show i
+      hPutStrLn stderr "OK"
+      exitSuccess
+
+-- * Command-line parsing
+
+-- | State of the command line parser.
 
 data CmdLine = CmdLine
   { strategy :: Strategy
   , fileName :: FilePath
   }
+
+-- | Initial state: 'CallByValue' is default.
 
 initCmdLine :: CmdLine
 initCmdLine = CmdLine
@@ -39,24 +69,20 @@ initCmdLine = CmdLine
   , fileName = ""
   }
 
-usage :: IO ()
-usage = do
-  putStrLn "Usage: lab4 [-n|-v] <SourceFile>"
-  exitFailure
+-- | Parse a single command line argument.
 
 parseArg :: String -> StateT CmdLine IO ()
 parseArg s
-  | s == "-n" = modify $ \ o -> o { strategy = CallByName  }
+  | s == "-n" = modify $ \ o -> o { strategy = CallByName }
   | s == "-v" = modify $ \ o -> o { strategy = CallByValue }
   | otherwise = do
       old <- gets fileName
       if null old then modify $ \ o -> o { fileName = s }
-      else lift $ usage
+      else liftIO $ usage
 
-main :: IO ()
-main = do
-  args <- getArgs
-  o <- mapM_ parseArg args `execStateT` initCmdLine
-  let file = fileName o
-  when (null file) usage
-  run (strategy o) =<< readFile file
+-- | Print usage information and exit.
+
+usage :: IO ()
+usage = do
+  putStrLn "Usage: lab4 [-n|-v] <SourceFile>"
+  exitFailure
