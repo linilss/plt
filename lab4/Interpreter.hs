@@ -107,7 +107,9 @@ eval e = case e of
       Nothing -> do
         sig <- asks cxtSig
         case Map.lookup x sig of
-          Just e -> eval e
+          Just e -> local (\ cxt -> cxt { cxtEnv = Map.empty}) (eval e)
+          --local (\cxt -> cxt { e Map.empty } ) eval e
+          --local (\ cxt -> cxt { cxtEnv = Map.empty}) (eval e)
           Nothing -> error $ show x ++ " not bound"
 
   EAbs x e  -> do

@@ -1,5 +1,5 @@
-grow x = 1 + grow x ;
+a b = c;
 
-first x y = x + 1 ;
+d c = a c;
 
-main = print (first 4 (grow 4)) ; -- result 5 with -n, loop otherwise
+main = print (d 111);
