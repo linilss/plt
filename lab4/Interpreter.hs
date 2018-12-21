@@ -11,9 +11,9 @@ import Data.Functor
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-import FUN.Abs
-import FUN.ErrM
-import FUN.Print
+import Fun.Abs
+import Fun.ErrM
+import Fun.Print
 
 -- | Evaluation strategy.
 

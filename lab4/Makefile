@@ -1,33 +1,34 @@
-all: lab4 test
+all: lab4
 
-lab4 : lab4.hs Interpreter.hs FUN/Test
+lab4 : lab4.hs Interpreter.hs Fun/Test
 	ghc --make lab4.hs -o lab4
 
 test : test/const.hs
 # test/dont-bind-too-eagerly.cc # scopes-reuse-name.cc # while-scope.cc  # if-scope.cc  # while-block.cc
 	./lab4 -n $<
 
-FUN/Test.hs FUN/Lex.x FUN/Layout.hs FUN/Par.y : FUN.cf
+
+Fun/Test.hs Fun/Lex.x Fun/Layout.hs Fun/Par.y : Fun.cf
 	bnfc --haskell -d $<
 
-FUN/Par.hs: FUN/Par.y
+Fun/Par.hs: Fun/Par.y
 	happy -gcai $<
 
-FUN/Lex.hs: FUN/Lex.x
+Fun/Lex.hs: Fun/Lex.x
 	alex -g $<
 
-FUN/Test: FUN/Test.hs FUN/Par.hs FUN/Lex.hs
+Fun/Test: Fun/Test.hs Fun/Par.hs Fun/Lex.hs
 	ghc --make $< -o $@
-	happy -gca FUN/ParFUN.y
-	alex -g FUN/LexFUN.x
-	ghc --make FUN/TestFUN.hs -o FUN/TestFUN
+	happy -gca Fun/Par.y
+	alex -g Fun/Lex.x
+	ghc --make Fun/Test.hs -o Fun/Test
 
 default: all
 
 clean:
-	-rm -f FUN/*.log FUN/*.aux FUN/*.hi FUN/*.o FUN/*.dvi
+	-rm -f Fun/*.log Fun/*.aux Fun/*.hi Fun/*.o Fun/*.dvi
 
 distclean: clean
-	-rm -f FUN/DocFUN.* FUN/LexFUN.* FUN/ParFUN.* FUN/LayoutFUN.* FUN/SkelFUN.* FUN/PrintFUN.* FUN/TestFUN.* FUN/AbsFUN.* FUN/TestFUN FUN/ErrM.* FUN/SharedString.* FUN/ComposOp.* FUN/FUN.dtd FUN/XMLFUN.* Makefile*
-		-rmdir -p FUN/
+	-rm -f Fun/DocFun.* Fun/LexFun.* Fun/ParFun.* Fun/LayoutFun.* Fun/SkelFun.* Fun/PrintFun.* Fun/TestFun.* Fun/AbsFun.* Fun/TestFun Fun/ErrM.* Fun/SharedString.* Fun/ComposOp.* Fun/Fun.dtd Fun/XMLFun.* Makefile*
+		-rmdir -p Fun/
 
